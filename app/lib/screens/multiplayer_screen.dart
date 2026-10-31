@@ -122,7 +122,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
   String get connectionUrl {
     if (isP2P) {
-      return "https://eduardiker.github.io/open-social/?room=$roomCode";
+      return "https://eduardiker.github.io/open-social/play.html?room=$roomCode";
     } else {
       return "http://${_hostService.localIp}:${_hostService.port}";
     }

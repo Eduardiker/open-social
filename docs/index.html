@@ -2,895 +2,720 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>JALEO - Mando de Jugador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JALEO - Party Box & Drinking Games | Código Abierto</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <!-- PeerJS para multijugador P2P Online con código de 4 letras -->
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <meta name="description" content="El party game de código abierto definitivo para tus previas y fiestas. Juega en grupo sin que tus amigos tengan que instalar nada. ¡Cero anuncios y 100% gratis!">
+  <meta property="og:title" content="JALEO - El Party Game Definitivo">
+  <meta property="og:description" content="Juega con tus amigos escaneando un QR desde cualquier móvil. Minijuegos, votaciones secretas y la patata caliente.">
+  <meta property="og:image" content="icon.png">
+
+  <!-- Redirección inteligente si alguien escanea un QR que apunta a la raíz con ?room o ?host -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('room') || urlParams.get('host') || urlParams.get('play')) {
+      window.location.href = 'play.html' + window.location.search;
+    }
+  </script>
+
   <style>
     :root {
-      --bg: #0F111A;
-      --card-bg: #1E2130;
-      --card-border: #2D3250;
+      --bg: #0A0C16;
+      --card-bg: #141829;
+      --card-border: #232B47;
       --primary: #6C5CE7;
+      --primary-hover: #5A48DE;
       --accent: #00CEC9;
-      --danger: #FF7675;
-      --warning: #FDCB6E;
+      --accent-glow: rgba(0, 206, 201, 0.4);
+      --party-pink: #FD79A8;
+      --party-yellow: #FDCB6E;
+      --party-red: #FF7675;
       --text: #F8F9FA;
-      --text-muted: #A4B0BE;
+      --text-muted: #9AA0B4;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
     body {
       background-color: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
       overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Ambient Glow Background */
+    .ambient-glow {
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(108, 92, 231, 0.25) 0%, rgba(253, 121, 168, 0.15) 50%, rgba(10, 12, 22, 0) 80%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .container {
-      max-width: 480px;
+      max-width: 1100px;
       margin: 0 auto;
-      width: 100%;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
     }
 
-    header {
+    /* Navbar */
+    nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 16px;
+      padding: 24px 0;
     }
 
-    .brand {
+    .logo-container {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 1.1rem;
+      gap: 14px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .logo-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(108, 92, 231, 0.5);
+    }
+
+    .logo-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #FFF 20%, var(--party-yellow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+    }
+
+    .nav-btn-play {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--party-pink) 100%);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 99px;
       font-weight: 800;
-      letter-spacing: -0.5px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .brand span {
-      color: var(--accent);
+    .nav-btn-play:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(108, 92, 231, 0.6);
     }
 
-    .badge-status {
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-weight: 700;
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 70px 0 50px 0;
+    }
+
+    .badge-pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    .status-connected {
-      background: rgba(0, 206, 201, 0.15);
-      color: var(--accent);
-      border: 1px solid rgba(0, 206, 201, 0.4);
-    }
-
-    .status-disconnected {
-      background: rgba(255, 118, 117, 0.15);
-      color: var(--danger);
-      border: 1px solid rgba(255, 118, 117, 0.4);
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      margin-bottom: 16px;
-    }
-
-    .screen {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-      justify-content: center;
-      animation: fadeIn 0.25s ease-out;
-    }
-
-    .screen.active {
-      display: flex;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Formulario de Entrada */
-    .input-group {
-      margin-bottom: 16px;
-      text-align: left;
-    }
-
-    label {
-      display: block;
-      font-size: 0.8rem;
+      gap: 8px;
+      background: rgba(108, 92, 231, 0.15);
+      border: 1px solid rgba(108, 92, 231, 0.4);
+      color: #A29BFE;
+      padding: 6px 18px;
+      border-radius: 99px;
+      font-size: 0.85rem;
       font-weight: 700;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      text-transform: uppercase;
+      margin-bottom: 24px;
       letter-spacing: 0.5px;
     }
 
-    input[type="text"] {
-      width: 100%;
-      background: #141724;
-      border: 1px solid var(--card-border);
-      color: #fff;
-      padding: 14px 16px;
-      border-radius: 14px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      outline: none;
-      transition: border-color 0.2s;
+    .hero h1 {
+      font-size: 3.4rem;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
     }
 
-    input[type="text"]:focus {
-      border-color: var(--primary);
+    .hero h1 span.gradient {
+      background: linear-gradient(135deg, var(--party-yellow) 0%, var(--party-pink) 50%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .avatar-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
-      margin-top: 8px;
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 36px auto;
     }
 
-    .avatar-option {
-      font-size: 1.6rem;
-      background: #141724;
-      border: 2px solid transparent;
-      border-radius: 12px;
-      padding: 8px 0;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-    }
-
-    .avatar-option.selected {
-      border-color: var(--accent);
-      background: rgba(0, 206, 201, 0.15);
-      transform: scale(1.08);
+    /* Action Buttons Row */
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 50px;
     }
 
     .btn {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      border-radius: 14px;
       font-size: 1.05rem;
       font-weight: 800;
+      text-decoration: none;
+      transition: all 0.2s ease;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: transform 0.1s, opacity 0.2s;
+      border: none;
     }
 
-    .btn:active {
-      transform: scale(0.97);
+    /* 1. Jugar Ya */
+    .btn-play-primary {
+      background: linear-gradient(135deg, #6C5CE7 0%, #FD79A8 100%);
+      color: #FFF;
+      box-shadow: 0 8px 25px rgba(108, 92, 231, 0.5);
+      position: relative;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, var(--primary), #8E44AD);
-      color: #fff;
-      box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4);
+    .btn-play-primary:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 30px rgba(108, 92, 231, 0.7);
     }
 
-    .btn-accent {
-      background: linear-gradient(135deg, var(--accent), #0984E3);
-      color: #0F111A;
+    /* 2. Descargar GitHub */
+    .btn-github {
+      background: #1F2438;
+      color: #FFF;
+      border: 1px solid #303859;
     }
 
-    .btn-danger {
-      background: linear-gradient(135deg, var(--danger), #D63031);
-      color: #fff;
+    .btn-github:hover {
+      background: #272E47;
+      border-color: #4A5687;
+      transform: translateY(-2px);
     }
 
-    .mode-tabs {
-      display: flex;
+    /* 3. Google Play Store (Deshabilitado / En revisión) */
+    .btn-playstore-disabled {
       background: #141724;
-      border-radius: 12px;
-      padding: 4px;
-      margin-bottom: 16px;
+      color: #6C728A;
+      border: 1px solid #1F2438;
+      cursor: not-allowed;
+      position: relative;
     }
 
-    .mode-tab {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      font-size: 0.85rem;
+    .btn-playstore-disabled .tag {
+      font-size: 0.65rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 4px;
+      color: var(--party-yellow);
       font-weight: 700;
-      border-radius: 8px;
+      text-transform: uppercase;
+    }
+
+    /* Interactive Live Demo Card */
+    .demo-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 36px 30px;
+      margin: 40px 0;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .demo-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--party-pink), var(--accent), var(--party-yellow));
+    }
+
+    .demo-title {
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .demo-card-box {
+      background: #0B0E1B;
+      border: 2px dashed #2A3356;
+      border-radius: 18px;
+      padding: 26px 20px;
+      max-width: 600px;
+      margin: 20px auto;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .demo-card-type {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--party-pink);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .demo-card-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #FFF;
+      line-height: 1.4;
+    }
+
+    .demo-btn-next {
+      background: #232B47;
+      color: #FFF;
+      border: 1px solid #36426C;
+      padding: 10px 24px;
+      border-radius: 99px;
+      font-weight: 700;
       cursor: pointer;
-      color: var(--text-muted);
+      font-size: 0.95rem;
       transition: all 0.2s;
     }
 
-    .mode-tab.active {
+    .demo-btn-next:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    /* Game Modes Grid */
+    .section-header {
+      text-align: center;
+      margin: 70px 0 40px 0;
+    }
+
+    .section-header h2 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .mode-card {
       background: var(--card-bg);
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      transition: transform 0.2s, border-color 0.2s;
     }
 
-    /* Pantalla de Votación */
-    .vote-list {
+    .mode-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+    }
+
+    .mode-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+
+    .mode-card h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #FFF;
+    }
+
+    .mode-card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    /* How It Works (3 Steps) */
+    .steps-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 30px;
+    }
+
+    .step-box {
+      background: #0E1222;
+      border: 1px solid #1D243F;
+      border-radius: 18px;
+      padding: 30px 24px;
+      position: relative;
+    }
+
+    .step-num {
+      position: absolute;
+      top: -16px;
+      left: 24px;
+      background: var(--primary);
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 16px;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1rem;
+      box-shadow: 0 4px 10px rgba(108, 92, 231, 0.4);
     }
 
-    .vote-btn {
-      background: #141724;
-      border: 2px solid var(--card-border);
-      border-radius: 16px;
-      padding: 16px 20px;
-      color: #fff;
+    .step-box h4 {
       font-size: 1.15rem;
-      font-weight: 700;
+      font-weight: 800;
+      margin-top: 6px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .step-box p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    /* Open Source Banner */
+    .oss-banner {
+      background: linear-gradient(135deg, rgba(108, 92, 231, 0.2) 0%, rgba(0, 206, 201, 0.1) 100%);
+      border: 1px solid rgba(108, 92, 231, 0.4);
+      border-radius: 24px;
+      padding: 40px 30px;
+      margin: 80px 0 60px 0;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      cursor: pointer;
-      transition: all 0.15s;
+      gap: 24px;
     }
 
-    .vote-btn:active, .vote-btn.selected {
-      border-color: var(--accent);
-      background: rgba(0, 206, 201, 0.2);
-      transform: scale(0.98);
+    .oss-content h3 {
+      font-size: 1.6rem;
+      font-weight: 900;
+      margin-bottom: 8px;
     }
 
-    /* Pantalla de Rol Secreto (Undercover) */
-    .secret-box {
-      border: 3px dashed var(--accent);
-      background: rgba(0, 206, 201, 0.05);
-      border-radius: 24px;
-      padding: 36px 20px;
+    .oss-content p {
+      color: var(--text-muted);
+      max-width: 550px;
+      font-size: 0.95rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 40px 0 60px 0;
       text-align: center;
-      cursor: pointer;
-      margin: 20px 0;
-      transition: all 0.2s;
+      color: var(--text-muted);
+      font-size: 0.9rem;
     }
 
-    .secret-box:active {
-      background: rgba(0, 206, 201, 0.2);
-      border-style: solid;
-      transform: scale(0.99);
-    }
-
-    .secret-revealed {
-      font-size: 2rem;
-      font-weight: 900;
-      color: var(--warning);
-      letter-spacing: 1px;
-    }
-
-    /* Botones Gigantes Yo Sí / Yo Nunca */
-    .binary-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      flex: 1;
-      margin-top: 16px;
-    }
-
-    .big-choice-btn {
-      border-radius: 24px;
-      border: none;
+    .footer-links {
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      gap: 12px;
-      font-size: 1.4rem;
-      font-weight: 900;
+      gap: 24px;
+      margin-bottom: 18px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
       color: #fff;
-      cursor: pointer;
-      transition: transform 0.1s;
     }
 
-    .big-choice-btn:active {
-      transform: scale(0.95);
-    }
-
-    .choice-yes {
-      background: linear-gradient(180deg, #FF7675, #D63031);
-      box-shadow: 0 10px 25px rgba(214, 48, 49, 0.4);
-    }
-
-    .choice-no {
-      background: linear-gradient(180deg, #00B894, #00CEC9);
-      box-shadow: 0 10px 25px rgba(0, 184, 148, 0.4);
-    }
-
-    /* Pulso animado para espera */
-    .pulse-avatar {
-      animation: pulse 1.8s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-      100% { transform: scale(1); }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.3rem;
+      }
+      .hero p {
+        font-size: 1.05rem;
+      }
+      .cta-row {
+        flex-direction: column;
+        width: 100%;
+      }
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .nav-links {
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
+
+  <div class="ambient-glow"></div>
+
   <div class="container">
-    <header>
-      <div class="brand">
-        <span>⚡</span> OPEN SOCIAL
+    <!-- Navbar -->
+    <nav>
+      <a href="index.html" class="logo-container">
+        <img src="icon.png" alt="JALEO Icon" class="logo-img">
+        <span class="logo-title">JALEO</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#modos" class="nav-link">Minijuegos</a>
+        <a href="#como-jugar" class="nav-link">¿Cómo Funciona?</a>
+        <a href="https://github.com/Eduardiker/open-social" target="_blank" class="nav-link">GitHub</a>
+        <a href="play.html" class="nav-btn-play">🎮 Jugar Ahora</a>
       </div>
-      <div id="status-badge" class="badge-status status-disconnected">
-        <span id="status-dot">●</span> <span id="status-text">Sin conexión</span>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="badge-pill">
+        ✨ 100% Gratis · Código Abierto · Sin Anuncios
       </div>
-    </header>
 
-    <!-- 1. PANTALLA DE CONEXIÓN / LOBBY -->
-    <div id="screen-login" class="screen active">
-      <div class="card">
-        <h2 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 6px;">Unirse a la Sala</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
-          Juega con tus amigos desde tu móvil sin instalar nada.
-        </p>
+      <h1>
+        El Party Game definitivo <br>
+        para tus <span class="gradient">previas y fiestas</span>
+      </h1>
 
-        <!-- Selector de Modo: WiFi Local vs Online WebRTC -->
-        <div class="mode-tabs">
-          <div class="mode-tab active" id="tab-mode-local" onclick="setMode('local')">📶 Misma WiFi</div>
-          <div class="mode-tab" id="tab-mode-p2p" onclick="setMode('p2p')">🌐 Online (Código)</div>
-        </div>
+      <p>
+        Reúne a tu grupo, abre la app en un móvil y que tus amigos escaneen el código QR desde cualquier teléfono. Sin descargas, sin registros y sin esperas.
+      </p>
 
-        <div class="input-group" id="group-room" style="display: none;">
-          <label for="room-code">Código de Sala (4 letras)</label>
-          <input type="text" id="room-code" placeholder="Ej: FEST" maxlength="6" style="text-transform: uppercase;">
-        </div>
+      <!-- 3 Botones de Acción -->
+      <div class="cta-row">
+        <!-- 1. Jugar Ya -->
+        <a href="play.html" class="btn btn-play-primary">
+          <span style="font-size: 1.3rem;">🎮</span>
+          <span>¡JUGAR AHORA (Mando Web)!</span>
+        </a>
 
-        <div class="input-group" id="group-host">
-          <label for="host-ip">Dirección del Host</label>
-          <input type="text" id="host-ip" placeholder="192.168.1.xxx:8080">
-        </div>
+        <!-- 2. Descargar APK GitHub -->
+        <a href="https://github.com/Eduardiker/open-social/releases" target="_blank" class="btn btn-github">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span>Descargar APK (GitHub)</span>
+        </a>
 
-        <div class="input-group">
-          <label for="player-name">Tu Nombre o Apodo</label>
-          <input type="text" id="player-name" placeholder="Tu nombre..." maxlength="15">
-        </div>
-
-        <div class="input-group">
-          <label>Elige tu Avatar</label>
-          <div class="avatar-grid" id="avatar-container">
-            <!-- Avatares dinámicos -->
-          </div>
-        </div>
-
-        <button class="btn btn-primary" onclick="connectToHost()">
-          ¡Entrar a la Fiesta! 🚀
+        <!-- 3. Google Play (Gris / En Revisión) -->
+        <button class="btn btn-playstore-disabled" title="En proceso de verificación y publicación en Google Play Store">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3.609 1.814L13.793 12 3.61 22.186a2.215 2.215 0 0 1-.61-.926V2.74c.15-.365.37-.69.61-.926zm11.246 11.247l2.25 2.25-10.96 6.33 8.71-8.58zm2.957-.707l2.84 1.643a1.503 1.503 0 0 1 0 2.606l-2.84 1.643-2.016-2.016 2.016-1.876zm-2.957-.708L6.145 3.066l10.96 6.33-2.25 2.25z"/>
+          </svg>
+          <span>Google Play</span>
+          <span class="tag">En Revisión</span>
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- 2. PANTALLA DE ESPERA (LOBBY) -->
-    <div id="screen-waiting" class="screen">
-      <div class="card" style="text-align: center; padding: 40px 20px;">
-        <div id="wait-avatar" class="pulse-avatar" style="font-size: 4.5rem; margin-bottom: 12px;">🦊</div>
-        <h2 id="wait-player-name" style="font-size: 1.5rem; font-weight: 900; margin-bottom: 4px;">Jugador</h2>
-        <p style="color: var(--accent); font-weight: 700; font-size: 0.9rem; margin-bottom: 24px;">¡Conectado a la Sala!</p>
-
-        <div style="background: #141724; border-radius: 16px; padding: 18px; margin-bottom: 20px;">
-          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
-            Mira la pantalla del <strong>Host</strong>. La ronda comenzará en cuanto el anfitrión pulse empezar.
-          </p>
-        </div>
-
-        <div id="player-count-badge" style="font-size: 0.8rem; color: var(--text-muted);">
-          Esperando a los demás jugadores...
+    <!-- Interactive Live Demo Box -->
+    <div class="demo-section">
+      <div class="demo-title">⚡ PRUEBA UNA CARTA EN VIVO</div>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">Haz clic para ver ejemplos de dinámicas que vivirás en una partida:</p>
+      
+      <div class="demo-card-box" id="demoCardBox">
+        <div class="demo-card-type" id="demoCardType">🎭 MALDICIÓN COLECTIVA</div>
+        <div class="demo-card-text" id="demoCardText">
+          "A partir de este momento, cada vez que alguien diga la palabra 'SI' o beba sin brindar, ¡debe tomar 2 tragos de castigo! (Dura 3 rondas)"
         </div>
       </div>
+
+      <button class="demo-btn-next" onclick="nextDemoCard()">🎲 Sacar otra carta aleatoria</button>
     </div>
 
-    <!-- 3. PANTALLA: VOTACIÓN SECRETA (¿Quién es más probable? / Impostor) -->
-    <div id="screen-vote" class="screen">
-      <div class="card">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 6px;">VOTACIÓN SECRETA</div>
-        <h3 id="vote-question" style="font-size: 1.25rem; font-weight: 800; line-height: 1.4; margin-bottom: 16px;">
-          ¿A quién votas?
-        </h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-          Nadie verá tu voto hasta que todos hayan votado:
-        </p>
-        <div class="vote-list" id="vote-options">
-          <!-- Opciones dinámicas de jugadores -->
-        </div>
+    <!-- Minijuegos -->
+    <section id="modos">
+      <div class="section-header">
+        <h2>5 Modos de Fiesta en una Sola App</h2>
+        <p>Desde romper el hielo hasta el caos absoluto de risas, piques y tragos.</p>
       </div>
-    </div>
 
-    <!-- 4. PANTALLA: ROL SECRETO (Undercover / Impostor) -->
-    <div id="screen-secret" class="screen">
-      <div class="card" style="text-align: center;">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--warning); letter-spacing: 1.5px; margin-bottom: 8px;">PALABRA SECRETA</div>
-        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px;">Tu Rol en la Partida</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
-          Asegúrate de que nadie mire tu pantalla. Mantén pulsado para revelar:
-        </p>
-
-        <div class="secret-box" id="secret-card" onmousedown="revealSecret(true)" onmouseup="revealSecret(false)" ontouchstart="revealSecret(true)" ontouchend="revealSecret(false)">
-          <div id="secret-hidden-state">
-            <span style="font-size: 3rem;">🔒</span>
-            <div style="font-weight: 800; margin-top: 8px; color: var(--accent);">MANTÉN PULSADO</div>
-          </div>
-          <div id="secret-revealed-state" style="display: none;">
-            <div id="secret-role" style="font-size: 0.9rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase;">CIVIL</div>
-            <div id="secret-word" class="secret-revealed">PLAYA 🏖️</div>
-          </div>
+      <div class="modes-grid">
+        <!-- 1. Maldiciones & Duelos -->
+        <div class="mode-card">
+          <div class="mode-icon">🧪</div>
+          <h3>Maldiciones & Duelos</h3>
+          <p>Reglas acumulativas estilo virus que duran varios turnos. Si te olvidas de tu maldición o caes en un duelo rápido, ¡pagas las consecuencias!</p>
         </div>
 
-        <p style="font-size: 0.75rem; color: var(--text-muted);">
-          Al soltar la pantalla, tu palabra se volverá a ocultar de inmediato.
-        </p>
-      </div>
-    </div>
-
-    <!-- 5. PANTALLA: YO NUNCA / BINARIO EN DIRECTO -->
-    <div id="screen-binary" class="screen">
-      <div class="card" style="text-align: center; margin-bottom: 12px;">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--danger); letter-spacing: 1.5px; margin-bottom: 6px;">RESPUESTA EN VIVO</div>
-        <h3 id="binary-prompt" style="font-size: 1.25rem; font-weight: 800; line-height: 1.4;">
-          ¿Lo has hecho alguna vez?
-        </h3>
-      </div>
-      <div class="binary-grid">
-        <button class="big-choice-btn choice-yes" onclick="submitBinaryChoice(true)">
-          <span style="font-size: 3rem;">🙋</span>
-          <span>¡YO SÍ!</span>
-          <span style="font-size: 0.8rem; opacity: 0.8;">(Bebo / Castigo)</span>
-        </button>
-        <button class="big-choice-btn choice-no" onclick="submitBinaryChoice(false)">
-          <span style="font-size: 3rem;">😇</span>
-          <span>YO NUNCA</span>
-          <span style="font-size: 0.8rem; opacity: 0.8;">(Me libro)</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 6. PANTALLA: CASTIGO O ALERTA -->
-    <div id="screen-penalty" class="screen">
-      <div class="card" style="text-align: center; border: 2px solid var(--danger); background: rgba(255,118,117,0.1); padding: 36px 20px;">
-        <span style="font-size: 4rem;">🚨</span>
-        <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--danger); margin: 12px 0 6px;">¡TE TOCA CUMPLIR!</h2>
-        <p id="penalty-text" style="font-size: 1.2rem; font-weight: 700; line-height: 1.4; margin-bottom: 24px; color: #fff;">
-          ¡Has sido el más votado! Bebe 3 tragos o gira la ruleta.
-        </p>
-        <button class="btn btn-primary" onclick="setScreen('screen-waiting')">
-          ¡Cumplido! Continuar
-        </button>
-      </div>
-    </div>
-
-    <!-- 7. PANTALLA: FAKE IT LIVE (EL CAMALEÓN) -->
-    <div id="screen-fakeit" class="screen">
-      <div class="card" style="text-align: center;">
-        <div style="font-size: 0.75rem; font-weight: 900; color: var(--warning); letter-spacing: 1.5px; margin-bottom: 8px;">FAKE IT • FÍNGELO</div>
-        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px;">Tu Acción Secreta</h3>
-        
-        <div class="secret-box" id="fakeit-card" onmousedown="revealFakeIt(true)" onmouseup="revealFakeIt(false)" ontouchstart="revealFakeIt(true)" ontouchend="revealFakeIt(false)">
-          <div id="fakeit-hidden">
-            <span style="font-size: 3rem;">🎭</span>
-            <div style="font-weight: 800; margin-top: 8px; color: var(--accent);">MANTÉN PULSADO</div>
-          </div>
-          <div id="fakeit-revealed" style="display: none;">
-            <div id="fakeit-role-badge" style="font-size: 0.85rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase;">ACCIÓN</div>
-            <div id="fakeit-action-text" class="secret-revealed" style="font-size: 1.3rem; line-height: 1.4; margin-top: 8px;">
-              ¡Pon cara de sorpresa y aplaude!
-            </div>
-          </div>
+        <!-- 2. Fake It Live -->
+        <div class="mode-card">
+          <div class="mode-icon">🕵️‍♂️</div>
+          <h3>Fake It & Infiltrado Live</h3>
+          <p>Todos reciben una palabra secreta en su móvil excepto el impostor. Haz preguntas, responde con ingenio y votad al sospechoso en tiempo real.</p>
         </div>
-        <p style="font-size: 0.75rem; color: var(--text-muted);">
-          Mira la pantalla del Host para la cuenta atrás 3, 2, 1... ¡y actúa a la vez!
+
+        <!-- 3. Patata Caliente Live -->
+        <div class="mode-card">
+          <div class="mode-icon">💣</div>
+          <h3>La Patata Caliente Live</h3>
+          <p>El temporizador va corriendo y la bomba viaja por el aire de pantalla a pantalla. Di una palabra de la categoría y pásala antes de que explote en tu mano.</p>
+        </div>
+
+        <!-- 4. Votaciones & ¿Qué Prefieres? -->
+        <div class="mode-card">
+          <div class="mode-icon">🗳️</div>
+          <h3>Votaciones en Vivo</h3>
+          <p>¿Quién es más probable que termine en urgencias hoy? Elige en secreto desde tu mando web y descubre qué piensa realmente tu grupo de amigos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cómo Funciona -->
+    <section id="como-jugar" style="margin-top: 70px;">
+      <div class="section-header">
+        <h2>Cero Complicaciones para tus Invitados</h2>
+        <p>Se acabaron las discusiones de "yo no tengo memoria para instalarme otra app".</p>
+      </div>
+
+      <div class="steps-container">
+        <div class="step-box">
+          <div class="step-num">1</div>
+          <h4>El Host Inicia la Sala</h4>
+          <p>Un solo amigo abre la app de JALEO en su móvil o tablet y pulsa en "Crear Sala". Se generará un código QR grande y un código de 4 letras.</p>
+        </div>
+
+        <div class="step-box">
+          <div class="step-num">2</div>
+          <h4>Escanead con la Cámara</h4>
+          <p>Todos los demás apuntan la cámara de su móvil al QR. ¡Listo! Se abre el mando web al instante en Chrome o Safari, sin pedir registros ni correos.</p>
+        </div>
+
+        <div class="step-box">
+          <div class="step-num">3</div>
+          <h4>¡Empieza el Jaleo!</h4>
+          <p>Votad en secreto, responded a preguntas a la vez y pasad la bomba caliente. Todo sincronizado en vivo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Open Source Banner -->
+    <div class="oss-banner">
+      <div class="oss-content">
+        <h3>❤️ Hecho por y para la comunidad</h3>
+        <p>
+          JALEO es 100% código abierto y libre. ¿Quieres inventarte nuevas preguntas picantes o modos para jugar con tu grupo? Puedes añadirlas directamente en GitHub mediante un formulario simple sin programar.
         </p>
       </div>
-    </div>
-
-    <!-- 8. PANTALLA: LA PATATA CALIENTE EN VIVO (HOT POTATO) -->
-    <div id="screen-hotpotato" class="screen">
-      <div class="card" id="potato-card" style="text-align: center; border: 2px solid var(--danger); background: rgba(255,118,117,0.15); padding: 24px 16px;">
-        <div id="potato-holding-view">
-          <span style="font-size: 4rem; display: inline-block; animation: pulse 0.5s infinite;">💣</span>
-          <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--danger); margin: 8px 0;">¡TIENES LA BOMBA!</h2>
-          <p id="potato-category" style="font-size: 1rem; font-weight: 800; color: #fff; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 12px; margin-bottom: 16px;">
-            Categoría: Marcas de coches
-          </p>
-          <p style="font-size: 0.85rem; color: var(--warning); font-weight: 700; margin-bottom: 12px;">
-            ¡Di una palabra en voz alta y pásala tocando un nombre!
-          </p>
-          <div class="vote-list" id="potato-pass-options">
-            <!-- Botones dinámicos para pasar la bomba -->
-          </div>
-        </div>
-
-        <div id="potato-waiting-view" style="display: none; padding: 20px 0;">
-          <span style="font-size: 3.5rem;">⏱️</span>
-          <h3 id="potato-holder-msg" style="font-size: 1.3rem; font-weight: 800; color: #fff; margin: 12px 0 6px;">
-            La bomba la tiene Marcos...
-          </h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">
-            ¡Atento por si te la pasa a ti!
-          </p>
-        </div>
+      <div>
+        <a href="https://github.com/Eduardiker/open-social/blob/main/CONTRIBUTING.md" target="_blank" class="btn btn-github">
+          ⭐ Colaborar en GitHub
+        </a>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="play.html">Mando Web</a>
+        <a href="privacy.html">Política de Privacidad</a>
+        <a href="https://github.com/Eduardiker/open-social" target="_blank">Repositorio GitHub</a>
+        <a href="https://github.com/Eduardiker/open-social/issues" target="_blank">Sugerir Preguntas</a>
+      </div>
+      <p>© 2026 JALEO (Open Social) · Proyecto comunitario de código abierto sin ánimo de lucro.</p>
+    </footer>
   </div>
 
   <script>
-    // Configuración y Estado del Cliente
-    const avatars = ['🦊', '🐯', '🐼', '🐸', '🚀', '🍺', '🍕', '👑', '🔥', '💎', '🥑', '🦄'];
-    let selectedAvatar = avatars[0];
-    let connectionMode = 'local'; // 'local' (WiFi) o 'p2p' (WebRTC)
-    let socket = null;
-    let peer = null;
-    let peerConn = null;
-    let currentSecretData = { role: 'CIVIL', word: 'PLAYA' };
-
-    // Inicialización al cargar la web
-    window.addEventListener('DOMContentLoaded', () => {
-      renderAvatars();
-      parseUrlParameters();
-    });
-
-    function renderAvatars() {
-      const container = document.getElementById('avatar-container');
-      container.innerHTML = '';
-      avatars.forEach((emoji, index) => {
-        const div = document.createElement('div');
-        div.className = `avatar-option ${index === 0 ? 'selected' : ''}`;
-        div.innerText = emoji;
-        div.onclick = () => {
-          document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-          div.classList.add('selected');
-          selectedAvatar = emoji;
-        };
-        container.appendChild(div);
-      });
-    }
-
-    function setMode(mode) {
-      connectionMode = mode;
-      document.getElementById('tab-mode-local').classList.toggle('active', mode === 'local');
-      document.getElementById('tab-mode-p2p').classList.toggle('active', mode === 'p2p');
-      document.getElementById('group-host').style.display = mode === 'local' ? 'block' : 'none';
-      document.getElementById('group-room').style.display = mode === 'p2p' ? 'block' : 'none';
-    }
-
-    function parseUrlParameters() {
-      const params = new URLSearchParams(window.location.search);
-      // Si la URL viene con ?room=FEST activamos modo P2P directamente
-      if (params.get('room')) {
-        setMode('p2p');
-        document.getElementById('room-code').value = params.get('room').toUpperCase();
+    const sampleCards = [
+      {
+        type: "🎭 MALDICIÓN COLECTIVA",
+        text: "A partir de ahora, cada vez que alguien diga la palabra 'SI' o beba sin brindar, ¡debe tomar 2 tragos de castigo! (Dura 3 rondas)"
+      },
+      {
+        type: "💣 LA PATATA CALIENTE",
+        text: "Categoría: 'Excusas para no salir de fiesta'. Tienes la bomba en la mano, di una rápido y pásala antes de que estalle."
+      },
+      {
+        type: "🕵️‍♂️ FAKE IT (INFILTRADO)",
+        text: "Tu palabra secreta es: 'DISCOTECA'. Di una sola palabra relacionada para convencer a los demás... ¡pero cuidado con el impostor!"
+      },
+      {
+        type: "🔥 DUELO RÁPIDO",
+        text: "Duelo de miradas fijas entre los dos jugadores que tengan más batería en el móvil. El primero en parpadear o reírse, bebe."
+      },
+      {
+        type: "🗳️ VOTACIÓN SECRETA",
+        text: "¿Quién del grupo sería el primero en ser arrestado en un viaje a Las Vegas? Vota en silencio desde tu pantalla."
       }
-      // Si viene con ?host=192.168.1.55:8080 o estamos cargados desde el servidor local
-      if (params.get('host')) {
-        setMode('local');
-        document.getElementById('host-ip').value = params.get('host');
-      } else if (window.location.host && !window.location.host.includes('github.io')) {
-        setMode('local');
-        document.getElementById('host-ip').value = window.location.host;
-      }
-      if (params.get('name')) {
-        document.getElementById('player-name').value = params.get('name');
-      }
-    }
+    ];
 
-    function setScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      const active = document.getElementById(screenId);
-      if (active) active.classList.add('active');
-    }
+    let currentCardIndex = 0;
 
-    function updateStatus(connected, text) {
-      const badge = document.getElementById('status-badge');
-      const dot = document.getElementById('status-dot');
-      const label = document.getElementById('status-text');
-      if (connected) {
-        badge.className = 'badge-status status-connected';
-        dot.style.color = 'var(--accent)';
-        label.innerText = text || 'En línea';
-      } else {
-        badge.className = 'badge-status status-disconnected';
-        dot.style.color = 'var(--danger)';
-        label.innerText = text || 'Desconectado';
-      }
-    }
-
-    // ==========================================
-    // CONEXIÓN AL HOST (LOCAL O P2P)
-    // ==========================================
-    function connectToHost() {
-      const name = document.getElementById('player-name').value.trim();
-      if (!name) {
-        alert("Por favor introduce tu nombre.");
-        return;
-      }
-
-      if (navigator.vibrate) navigator.vibrate(50);
-      document.getElementById('wait-avatar').innerText = selectedAvatar;
-      document.getElementById('wait-player-name').innerText = `${selectedAvatar} ${name}`;
-
-      if (connectionMode === 'local') {
-        connectLocalWebSocket(name);
-      } else {
-        connectWebRTCPeer(name);
-      }
-    }
-
-    // Modo 1: WebSocket Local (Misma WiFi / Hotspot)
-    function connectLocalWebSocket(name) {
-      let host = document.getElementById('host-ip').value.trim();
-      if (!host) host = window.location.host || '192.168.1.1:8080';
-      const wsUrl = `ws://${host}/ws`;
-
-      updateStatus(false, 'Conectando...');
-
-      try {
-        socket = new WebSocket(wsUrl);
-
-        socket.onopen = () => {
-          updateStatus(true, 'Conectado (WiFi)');
-          sendData({
-            type: 'join',
-            name: name,
-            avatar: selectedAvatar
-          });
-          setScreen('screen-waiting');
-        };
-
-        socket.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            handleHostMessage(data);
-          } catch (e) {
-            console.error("Mensaje inválido:", event.data);
-          }
-        };
-
-        socket.onclose = () => {
-          updateStatus(false, 'Desconectado');
-        };
-
-        socket.onerror = (err) => {
-          console.error("Error WebSocket:", err);
-          updateStatus(false, 'Error conexión');
-          alert("No se pudo conectar al host local. Revisa que estés en la misma WiFi.");
-        };
-      } catch (err) {
-        alert("Error de conexión: " + err.message);
-      }
-    }
-
-    // Modo 2: WebRTC P2P (PeerJS - Online por código de 4 letras)
-    function connectWebRTCPeer(name) {
-      const room = document.getElementById('room-code').value.trim().toUpperCase();
-      if (!room) {
-        alert("Introduce el código de sala de 4 letras.");
-        return;
-      }
-
-      updateStatus(false, 'Conectando P2P...');
-      const hostPeerId = `opensocial-room-${room}`;
-
-      // Crear cliente Peer sin ID fija
-      peer = new Peer();
-
-      peer.on('open', (id) => {
-        peerConn = peer.connect(hostPeerId, { reliable: true });
-
-        peerConn.on('open', () => {
-          updateStatus(true, `Sala: ${room}`);
-          sendData({
-            type: 'join',
-            name: name,
-            avatar: selectedAvatar
-          });
-          setScreen('screen-waiting');
-        });
-
-        peerConn.on('data', (data) => {
-          handleHostMessage(data);
-        });
-
-        peerConn.on('close', () => {
-          updateStatus(false, 'Sala cerrada');
-        });
-
-        peerConn.on('error', (err) => {
-          console.error("Error P2P Conn:", err);
-          updateStatus(false, 'Error sala');
-          alert("No se pudo conectar a la sala " + room + ". ¿Está el Host iniciado?");
-        });
-      });
-
-      peer.on('error', (err) => {
-        console.error("Error PeerJS:", err);
-        updateStatus(false, 'Error P2P');
-        alert("Error de conexión P2P: " + err.type);
-      });
-    }
-
-    // Enviar datos al host (unificado para WS y P2P)
-    function sendData(msg) {
-      if (connectionMode === 'local' && socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(msg));
-      } else if (connectionMode === 'p2p' && peerConn && peerConn.open) {
-        peerConn.send(msg);
-      }
-    }
-
-    // ==========================================
-    // PROCESAMIENTO DE ACCIONES DEL HOST
-    // ==========================================
-    function handleHostMessage(msg) {
-      console.log("Mensaje del Host:", msg);
-      if (navigator.vibrate) navigator.vibrate(80);
-
-      switch (msg.type) {
-        case 'lobby_state':
-          // Actualizar estado del lobby
-          document.getElementById('player-count-badge').innerText = `Jugadores en sala: ${msg.playerCount || 1}`;
-          break;
-
-        case 'start_vote':
-          // Abrir votación secreta
-          document.getElementById('vote-question').innerText = msg.question || '¿A quién votas?';
-          const container = document.getElementById('vote-options');
-          container.innerHTML = '';
-          (msg.options || []).forEach(opt => {
-            const btn = document.createElement('div');
-            btn.className = 'vote-btn';
-            btn.innerHTML = `<span>${opt.avatar || '👤'} ${opt.name}</span> <span>➔</span>`;
-            btn.onclick = () => {
-              document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
-              btn.classList.add('selected');
-              if (navigator.vibrate) navigator.vibrate(50);
-              sendData({ type: 'vote_submitted', target: opt.name });
-              setTimeout(() => {
-                setScreen('screen-waiting');
-              }, 400);
-            };
-            container.appendChild(btn);
-          });
-          setScreen('screen-vote');
-          break;
-
-        case 'secret_role':
-          // Recibir palabra secreta (Undercover)
-          currentSecretData = {
-            role: msg.role || 'CIVIL',
-            word: msg.word || 'DESCONOCIDO'
-          };
-          document.getElementById('secret-role').innerText = currentSecretData.role;
-          document.getElementById('secret-word').innerText = currentSecretData.word;
-          setScreen('screen-secret');
-          break;
-
-        case 'start_binary':
-          // Recibir pregunta de Yo Sí / Yo Nunca o Qué Prefieres
-          document.getElementById('binary-prompt').innerText = msg.text || '¿Lo has hecho alguna vez?';
-          setScreen('screen-binary');
-          break;
-
-        case 'penalty_alert':
-          // Alerta de castigo directo al jugador
-          document.getElementById('penalty-text').innerText = msg.reason || '¡Te toca cumplir castigo!';
-          setScreen('screen-penalty');
-          break;
-
-        case 'fake_it_prompt':
-          const badge = document.getElementById('fakeit-role-badge');
-          const txt = document.getElementById('fakeit-action-text');
-          if (msg.isImpostor) {
-            badge.innerText = "🤫 ¡ERES EL IMPOSTOR!";
-            badge.style.color = "var(--danger)";
-            txt.innerText = "¡No sabes la acción! Mira por el rabillo del ojo a los demás e imítales al segundo sin que te pillen.";
-            txt.style.color = "var(--warning)";
-          } else {
-            badge.innerText = "😇 ACCIÓN SECRETA";
-            badge.style.color = "var(--accent)";
-            txt.innerText = msg.action;
-            txt.style.color = "#fff";
-          }
-          setScreen('screen-fakeit');
-          break;
-
-        case 'bomb_holding':
-          if (msg.isHolding) {
-            document.getElementById('potato-holding-view').style.display = 'block';
-            document.getElementById('potato-waiting-view').style.display = 'none';
-            document.getElementById('potato-category').innerText = "Categoría: " + (msg.category || 'Palabras rápidas');
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
-            
-            const passContainer = document.getElementById('potato-pass-options');
-            passContainer.innerHTML = '';
-            (msg.others || []).forEach(otherName => {
-              const b = document.createElement('div');
-              b.className = 'vote-btn';
-              b.style.borderColor = 'var(--danger)';
-              b.innerHTML = `<span>💣 Pasar a <strong>${otherName}</strong></span> <span>➔</span>`;
-              b.onclick = () => {
-                if (navigator.vibrate) navigator.vibrate(80);
-                sendData({ type: 'pass_bomb', to: otherName });
-                document.getElementById('potato-holding-view').style.display = 'none';
-                document.getElementById('potato-waiting-view').style.display = 'block';
-                document.getElementById('potato-holder-msg').innerText = `Bomba pasada a ${otherName}...`;
-              };
-              passContainer.appendChild(b);
-            });
-          } else {
-            document.getElementById('potato-holding-view').style.display = 'none';
-            document.getElementById('potato-waiting-view').style.display = 'block';
-            document.getElementById('potato-holder-msg').innerText = `La bomba la tiene ${msg.holderName || 'otro jugador'}...`;
-          }
-          setScreen('screen-hotpotato');
-          break;
-
-        case 'reset_to_lobby':
-          setScreen('screen-waiting');
-          break;
-      }
-    }
-
-    function submitBinaryChoice(choice) {
-      if (navigator.vibrate) navigator.vibrate(50);
-      sendData({ type: 'binary_submitted', value: choice });
-      setScreen('screen-waiting');
-    }
-
-    function revealSecret(show) {
-      const hidden = document.getElementById('secret-hidden-state');
-      const revealed = document.getElementById('secret-revealed-state');
-      if (show) {
-        hidden.style.display = 'none';
-        revealed.style.display = 'block';
-        if (navigator.vibrate) navigator.vibrate(30);
-      } else {
-        hidden.style.display = 'block';
-        revealed.style.display = 'none';
-      }
-    }
-
-    function revealFakeIt(show) {
-      const hidden = document.getElementById('fakeit-hidden');
-      const revealed = document.getElementById('fakeit-revealed');
-      if (show) {
-        hidden.style.display = 'none';
-        revealed.style.display = 'block';
-        if (navigator.vibrate) navigator.vibrate(30);
-      } else {
-        hidden.style.display = 'block';
-        revealed.style.display = 'none';
-      }
+    function nextDemoCard() {
+      currentCardIndex = (currentCardIndex + 1) % sampleCards.length;
+      const card = sampleCards[currentCardIndex];
+      const box = document.getElementById('demoCardBox');
+      
+      box.style.transform = "scale(0.95)";
+      box.style.opacity = "0.4";
+      
+      setTimeout(() => {
+        document.getElementById('demoCardType').innerText = card.type;
+        document.getElementById('demoCardText').innerText = '"' + card.text + '"';
+        box.style.transform = "scale(1)";
+        box.style.opacity = "1";
+      }, 150);
     }
   </script>
 </body>
