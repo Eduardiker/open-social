@@ -1,95 +1,27 @@
-import 'dart:convert';
-
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
-
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
-
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
-
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
-
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
-  }
-
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+{
+  "id": "wrong_answers_classic_es",
+  "game": "wrong_answers_only",
+  "name": "Preguntas Rápidas",
+  "language": "es",
+  "rating": "all-ages",
+  "questions": [
+    { "q": "¿De qué color es el cielo durante un día soleado?", "trap": "Azul" },
+    { "q": "¿Cuántas patas tiene un perro normal?", "trap": "Cuatro" },
+    { "q": "¿Qué instrumento se usa habitualmente para cortar papel?", "trap": "Tijeras" },
+    { "q": "¿En qué país se encuentra la Torre Eiffel?", "trap": "Francia / París" },
+    { "q": "¿Qué líquido cae de las nubes cuando llueve?", "trap": "Agua" },
+    { "q": "¿Qué animal hace 'miau'?", "trap": "Gato" },
+    { "q": "¿Cuántos días tiene una semana?", "trap": "Siete" },
+    { "q": "¿Qué astro calienta la Tierra durante el día?", "trap": "El Sol" },
+    { "q": "¿Qué objeto te pones en los pies antes de los zapatos?", "trap": "Calcetines" },
+    { "q": "¿Qué sabor tiene el azúcar?", "trap": "Dulce" },
+    { "q": "¿En qué estación del año hace más calor habitualmente?", "trap": "Verano" },
+    { "q": "¿Qué extremidades usa el ser humano para caminar?", "trap": "Piernas / Pies" },
+    { "q": "¿De qué color es una manzana madura típica?", "trap": "Roja / Verde" },
+    { "q": "¿Qué elemento respiramos los seres humanos para vivir?", "trap": "Oxígeno / Aire" },
+    { "q": "¿Cuánto es uno más uno?", "trap": "Dos" },
+    { "q": "¿Qué animal da leche de vaca?", "trap": "La vaca" },
+    { "q": "¿Qué vehículo vuela por el aire con alas?", "trap": "Avión" },
+    { "q": "¿Qué prenda se usa para cubrir la cabeza del frío o sol?", "trap": "Gorra / Sombrero" }
+  ]
 }

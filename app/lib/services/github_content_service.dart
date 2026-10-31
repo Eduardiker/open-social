@@ -1,95 +1,89 @@
 import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/game_model.dart';
 
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
+class GitHubContentService {
+  // Repositorio de GitHub por defecto para el contenido comunitario
+  static const String defaultRepoOwner = "open-social-app";
+  static const String defaultRepoName = "open-social-content";
+  static const String defaultBranch = "main";
 
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
+  static String get rawContentBaseUrl =>
+      "https://raw.githubusercontent.com/$defaultRepoOwner/$defaultRepoName/$defaultBranch";
 
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
+  final SharedPreferences prefs;
+
+  GitHubContentService({required this.prefs});
+
+  static Future<GitHubContentService> create() async {
+    final preferences = await SharedPreferences.getInstance();
+    return GitHubContentService(prefs: preferences);
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
+  /// Carga el manifiesto del índice (primero intenta cache local, luego bundled asset o remoto)
+  Future<ContentManifest?> getManifest({bool forceRefresh = false}) async {
+    final cached = prefs.getString('cached_manifest');
 
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
+    if (!forceRefresh && cached != null && cached.isNotEmpty) {
+      try {
+        return ContentManifest.fromRawJson(cached);
+      } catch (e) {
+        // Fallback si la cache estaba corrupta
+      }
+    }
 
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
+    // Intentar sincronizar desde GitHub
+    if (forceRefresh || cached == null) {
+      try {
+        final url = Uri.parse("$rawContentBaseUrl/index.json");
+        final response = await http.get(url).timeout(const Duration(seconds: 6));
+        if (response.statusCode == 200) {
+          await prefs.setString('cached_manifest', response.body);
+          return ContentManifest.fromRawJson(response.body);
+        }
+      } catch (_) {
+        // En caso de estar offline o no haber conexión
+      }
+    }
 
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
+    // Fallback de emergencia a assets integrados en el binario
+    try {
+      final localAsset = await rootBundle.loadString('assets/content/index.json');
+      return ContentManifest.fromRawJson(localAsset);
+    } catch (_) {
+      return null;
+    }
   }
 
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+  /// Carga el contenido de un pack específico (Offline-first)
+  Future<Map<String, dynamic>?> loadPackContent(String filePath, {bool forceRefresh = false}) async {
+    final cacheKey = 'pack_$filePath';
+    final cachedData = prefs.getString(cacheKey);
+
+    if (!forceRefresh && cachedData != null) {
+      try {
+        return json.decode(cachedData) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+
+    // Intentar descargar desde GitHub
+    try {
+      final url = Uri.parse("$rawContentBaseUrl/$filePath");
+      final response = await http.get(url).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        await prefs.setString(cacheKey, response.body);
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+
+    // Fallback a asset local en la app
+    try {
+      final localData = await rootBundle.loadString('assets/content/$filePath');
+      return json.decode(localData) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
 }

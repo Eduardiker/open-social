@@ -1,95 +1,34 @@
-import 'dart:convert';
-
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
-
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
-
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
-
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
-
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
-  }
-
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+{
+  "id": "hot_bomb_categories_es",
+  "game": "hot_bomb",
+  "name": "La Bomba: Categorías",
+  "language": "es",
+  "rating": "all-ages",
+  "categories": [
+    "Cosas que dan muchísima vergüenza ajena",
+    "Excusas típicas para no ir a trabajar o a clase",
+    "Marcas de coches conocidas",
+    "Cosas que huelen fatal",
+    "Lugares donde pasarías la peor cita de tu vida",
+    "Comidas que la gente ama u odia a muerte",
+    "Personajes animados famosos de la televisión",
+    "Cosas que siempre se te olvidan en casa al salir",
+    "Nombres de villanos de películas o cómics",
+    "Cosas que encontrarías en el fondo del bolso o mochila de alguien",
+    "Animales que dan miedo o repulsión",
+    "Mentiras piadosas que todos hemos dicho alguna vez",
+    "Países que empiezan por la letra M, C o B",
+    "Cosas que haces cuando estás solo en casa y nadie te ve",
+    "Objetos que encuentras en el baño de un avión",
+    "Cosas que nunca deberías decir en una primera cita",
+    "Profesiones donde tienes que llevar uniforme",
+    "Cosas que se pueden romper fácilmente si se caen",
+    "Deportes olímpicos poco conocidos",
+    "Cosas que comprarías de inmediato si te tocaran 10 millones de euros",
+    "Sonidos irritantes que no soportas escuchar",
+    "Cosas que guardas en la mesita de noche",
+    "Insultos o apodos graciosos sin usar palabras malsonantes",
+    "Superpoderes que serían totalmente inútiles en la vida diaria",
+    "Cosas que tienen botones o pantallas táctiles"
+  ]
 }

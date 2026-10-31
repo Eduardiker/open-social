@@ -1,6 +1,29 @@
-package com.opensocial.app
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity: FlutterActivity() {
+{
+  "id": "never_classic_es",
+  "game": "never_have_i_ever",
+  "name": "Clásico Relatable",
+  "language": "es",
+  "rating": "teen",
+  "items": [
+    "Yo nunca he fingido estar hablando por teléfono para evitar a alguien por la calle.",
+    "Yo nunca he comido algo que se cayó al suelo aplicando la regla de los 5 segundos.",
+    "Yo nunca he buscado en Google mi propio nombre para ver qué resultados salían.",
+    "Yo nunca he fingido reírme de un chiste que en realidad no entendí.",
+    "Yo nunca he dejado un mensaje en 'visto' durante días y luego dije que se me olvidó responder.",
+    "Yo nunca he culpado a una mascota de un olor o ruido que causé yo.",
+    "Yo nunca me he quedado viendo una serie completa en un solo día sin salir de la cama.",
+    "Yo nunca he comprado ropa, me la he puesto con la etiqueta escondida y luego la he devuelto.",
+    "Yo nunca he fingido estar enfermo para librarme de un plan que me daba pereza.",
+    "Yo nunca me he quedado encerrado en un baño público intentando descifrar el pestillo.",
+    "Yo nunca he cantado con pasión una canción en inglés inventándome absolutamente toda la letra.",
+    "Yo nunca me he probado ropa cara en una tienda sabiendo que jamás podría comprarla.",
+    "Yo nunca he mandado un audio de más de 5 minutos que parecía un podcast.",
+    "Yo nunca he intentado empujar una puerta donde ponía claramente 'TIRAR'.",
+    "Yo nunca he fingido tener problemas de conexión para salirme de una videollamada.",
+    "Yo nunca he escondido algo tan bien que luego ni yo mismo fui capaz de encontrarlo.",
+    "Yo nunca he mirado el menú de un restaurante antes de ir para decidir qué voy a pedir.",
+    "Yo nunca he fingido saber quién era alguien que me saludó con entusiasmo por la calle.",
+    "Yo nunca he borrado una publicación en redes sociales porque no tuvo suficientes 'me gusta'.",
+    "Yo nunca he mirado disimuladamente la pantalla del móvil de la persona que tenía al lado en el metro o bus."
+  ]
 }

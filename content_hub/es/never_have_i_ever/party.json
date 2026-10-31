@@ -1,95 +1,24 @@
-import 'dart:convert';
-
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
-
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
-
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
-
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
-
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
-  }
-
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+{
+  "id": "never_party_es",
+  "game": "never_have_i_ever",
+  "name": "Fiesta & Desmadre",
+  "language": "es",
+  "rating": "18+",
+  "items": [
+    "Yo nunca he enviado un mensaje cariñoso a mi ex estando de fiesta.",
+    "Yo nunca me he despertado al día siguiente sin recordar cómo llegué a casa.",
+    "Yo nunca he entrado al baño equivocado (chicos/chicas) por despiste o prisa.",
+    "Yo nunca me he besado con alguien cuyo nombre no recordaba a la mañana siguiente.",
+    "Yo nunca he fingido ser el amigo del cumpleañero para colarme en una fiesta o zona VIP.",
+    "Yo nunca he bailado encima de una mesa o tarima y me he caído estrepitosamente.",
+    "Yo nunca he perdido la cartera, el DNI o el móvil en una sola noche de fiesta.",
+    "Yo nunca he salido de fiesta 'solo una horita' y he regresado cuando ya salía el sol.",
+    "Yo nunca he pedido perdón por adelantado sabiendo que la iba a liar.",
+    "Yo nunca me he tropezado disimulando como si fuera parte de un paso de baile.",
+    "Yo nunca he terminado comiendo kebabs o pizzas frías en la acera a las 6 de la mañana.",
+    "Yo nunca he hecho 'ghosting' a alguien tras una primera cita que fue un desastre.",
+    "Yo nunca he tenido un crush platónico con alguien que está en esta misma habitación.",
+    "Yo nunca he prometido 'no vuelvo a beber nunca más' y lo he roto a los pocos días.",
+    "Yo nunca me he puesto gafas de sol en una discoteca sintiéndome una estrella de rock."
+  ]
 }

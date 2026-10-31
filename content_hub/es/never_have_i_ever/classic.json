@@ -1,95 +1,29 @@
-import 'dart:convert';
-
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
-
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
-
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
-
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
-
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
-  }
-
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+{
+  "id": "never_classic_es",
+  "game": "never_have_i_ever",
+  "name": "Clásico Relatable",
+  "language": "es",
+  "rating": "teen",
+  "items": [
+    "Yo nunca he fingido estar hablando por teléfono para evitar a alguien por la calle.",
+    "Yo nunca he comido algo que se cayó al suelo aplicando la regla de los 5 segundos.",
+    "Yo nunca he buscado en Google mi propio nombre para ver qué resultados salían.",
+    "Yo nunca he fingido reírme de un chiste que en realidad no entendí.",
+    "Yo nunca he dejado un mensaje en 'visto' durante días y luego dije que se me olvidó responder.",
+    "Yo nunca he culpado a una mascota de un olor o ruido que causé yo.",
+    "Yo nunca me he quedado viendo una serie completa en un solo día sin salir de la cama.",
+    "Yo nunca he comprado ropa, me la he puesto con la etiqueta escondida y luego la he devuelto.",
+    "Yo nunca he fingido estar enfermo para librarme de un plan que me daba pereza.",
+    "Yo nunca me he quedado encerrado en un baño público intentando descifrar el pestillo.",
+    "Yo nunca he cantado con pasión una canción en inglés inventándome absolutamente toda la letra.",
+    "Yo nunca me he probado ropa cara en una tienda sabiendo que jamás podría comprarla.",
+    "Yo nunca he mandado un audio de más de 5 minutos que parecía un podcast.",
+    "Yo nunca he intentado empujar una puerta donde ponía claramente 'TIRAR'.",
+    "Yo nunca he fingido tener problemas de conexión para salirme de una videollamada.",
+    "Yo nunca he escondido algo tan bien que luego ni yo mismo fui capaz de encontrarlo.",
+    "Yo nunca he mirado el menú de un restaurante antes de ir para decidir qué voy a pedir.",
+    "Yo nunca he fingido saber quién era alguien que me saludó con entusiasmo por la calle.",
+    "Yo nunca he borrado una publicación en redes sociales porque no tuvo suficientes 'me gusta'.",
+    "Yo nunca he mirado disimuladamente la pantalla del móvil de la persona que tenía al lado en el metro o bus."
+  ]
 }

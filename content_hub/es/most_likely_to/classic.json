@@ -1,95 +1,39 @@
-import 'dart:convert';
-
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
-
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
-
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
-
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
-
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
-  }
-
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+{
+  "id": "most_likely_classic_es",
+  "game": "most_likely_to",
+  "name": "Clásico Fiesta",
+  "language": "es",
+  "rating": "teen",
+  "items": [
+    "¿Quién es más probable que termine detenido por un malentendido absurdo?",
+    "¿Quién es más probable que sobreviva a un apocalipsis zombi?",
+    "¿Quién es más probable que olvide el cumpleaños de su mejor amigo/a?",
+    "¿Quién es más probable que se vuelva famoso en internet por accidente con un meme?",
+    "¿Quién es más probable que gaste todo su sueldo en algo totalmente inútil?",
+    "¿Quién es más probable que se quede dormido en una fiesta o evento formal?",
+    "¿Quién es más probable que envíe una captura de pantalla a la misma persona de la que estaba hablando?",
+    "¿Quién es más probable que llore viendo una película de dibujos animados?",
+    "¿Quién es más probable que pierda las llaves dentro de su propia casa?",
+    "¿Quién es más probable que empiece una secta sin darse cuenta?",
+    "¿Quién es más probable que se tropiece en una alfombra roja o entrada triunfal?",
+    "¿Quién es más probable que tenga una conversación entera con su mascota?",
+    "¿Quién es más probable que finga saber de un tema del que no tiene ni idea para impresionar?",
+    "¿Quién es más probable que compre algo solo porque el empaque o la botella era bonita?",
+    "¿Quién es más probable que se case en Las Vegas de manera impulsiva?",
+    "¿Quién es más probable que sobreviva solo una semana en la naturaleza sin internet?",
+    "¿Quién es más probable que se ría a carcajadas en el momento más inoportuno y serio?",
+    "¿Quién es más probable que se gaste una fortuna en comida a domicilio por pereza de cocinar?",
+    "¿Quién es más probable que se equivoque de tren, avión o autobús?",
+    "¿Quién es más probable que intente arreglar algo roto y termine rompiéndolo todavía más?",
+    "¿Quién es más probable que sea descubierto espiando las redes de su ex?",
+    "¿Quién es más probable que acabe siendo el presidente de un club de fans bizarro?",
+    "¿Quién es más probable que finja no ver a alguien en la calle para no tener que saludar?",
+    "¿Quién es más probable que gane un concurso de talentos absurdos?",
+    "¿Quién es más probable que se coma la comida de otra persona en la nevera compartida?",
+    "¿Quién es más probable que se una a un reality show por las risas?",
+    "¿Quién es más probable que pierda su propio teléfono mientras lo tiene en la mano?",
+    "¿Quién es más probable que cante a pleno pulmón en la ducha creyendo que nadie lo escucha?",
+    "¿Quién es más probable que tenga más de 50 alarmas puestas para levantarse por la mañana?",
+    "¿Quién es más probable que se haga un tatuaje del que se arrepienta en 2 semanas?"
+  ]
 }

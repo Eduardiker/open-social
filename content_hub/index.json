@@ -1,95 +1,200 @@
-import 'dart:convert';
-
-class GamePackInfo {
-  final String id;
-  final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
-
-  GamePackInfo({
-    required this.id,
-    required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
-  });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
-  };
-}
-
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
-
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
-
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
-
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
-
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
-
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
-  }
-
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+{
+  "name": "open_social_content",
+  "version": "1.4.0",
+  "description": "Repositorio oficial de contenidos y packs para Open Social",
+  "languages": ["es", "en"],
+  "games": [
+    {
+      "id": "picolo_mode",
+      "name": "Modo Picolo (Maldiciones)",
+      "icon": "auto_awesome",
+      "description": "Virus que duran turnos, duelos 1 vs 1, votaciones y reglas globales.",
+      "packs": [
+        {
+          "id": "picolo_classic_es",
+          "name": "Previa & Calentamiento",
+          "language": "es",
+          "rating": "teen",
+          "version": 2,
+          "file": "es/picolo_mode/classic.json"
+        },
+        {
+          "id": "picolo_party_es",
+          "name": "Fiesta & Desmadre",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/picolo_mode/party.json"
+        },
+        {
+          "id": "picolo_spicy_es",
+          "name": "Picante & Tensión (+18)",
+          "language": "es",
+          "rating": "18+",
+          "version": 1,
+          "file": "es/picolo_mode/spicy.json"
+        },
+        {
+          "id": "picolo_bar_es",
+          "name": "Sin Piedad & Celulares",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/picolo_mode/bar.json"
+        }
+      ]
+    },
+    {
+      "id": "hot_bomb",
+      "name": "La Bomba (Hot Bomb)",
+      "icon": "timer",
+      "description": "Di una palabra de la categoría y pasa el móvil antes de que explote.",
+      "packs": [
+        {
+          "id": "hot_bomb_categories_es",
+          "name": "Categorías Fránticas",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/hot_bomb/categories.json"
+        }
+      ]
+    },
+    {
+      "id": "most_likely_to",
+      "name": "¿Quién es más probable?",
+      "icon": "people",
+      "description": "Señalen todos a la vez a quien encaje mejor con la afirmación.",
+      "packs": [
+        {
+          "id": "most_likely_classic_es",
+          "name": "Clásico Fiesta",
+          "language": "es",
+          "rating": "teen",
+          "version": 2,
+          "file": "es/most_likely_to/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "never_have_i_ever",
+      "name": "Yo Nunca",
+      "icon": "local_bar",
+      "description": "Si lo has hecho alguna vez, bebes o pierdes una vida.",
+      "packs": [
+        {
+          "id": "never_classic_es",
+          "name": "Clásico Relatable",
+          "language": "es",
+          "rating": "teen",
+          "version": 2,
+          "file": "es/never_have_i_ever/classic.json"
+        },
+        {
+          "id": "never_party_es",
+          "name": "Fiesta & Desmadre",
+          "language": "es",
+          "rating": "18+",
+          "version": 2,
+          "file": "es/never_have_i_ever/party.json"
+        }
+      ]
+    },
+    {
+      "id": "would_you_rather",
+      "name": "¿Qué prefieres?",
+      "icon": "balance",
+      "description": "Dilemas imposibles y estadísticas de la comunidad.",
+      "packs": [
+        {
+          "id": "would_you_rather_classic_es",
+          "name": "Clásico Dilemas",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/would_you_rather/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "truth_or_dare",
+      "name": "Verdad o Reto",
+      "icon": "flash_on",
+      "description": "Confesiones sinceras y desafíos directos entre jugadores.",
+      "packs": [
+        {
+          "id": "truth_dare_classic_es",
+          "name": "Clásico Fiesta",
+          "language": "es",
+          "rating": "teen",
+          "version": 2,
+          "file": "es/truth_or_dare/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "fake_it",
+      "name": "Fake It (Fíngelo)",
+      "icon": "theater_comedy",
+      "description": "Todos reciben una acción secreta salvo el impostor, que debe fingir.",
+      "packs": [
+        {
+          "id": "fake_it_classic_es",
+          "name": "Gestos y Acciones",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 2,
+          "file": "es/fake_it/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "couples",
+      "name": "Modo Parejas / Citas",
+      "icon": "favorite",
+      "description": "Preguntas de sincronización, complicidad y secretos para dos.",
+      "packs": [
+        {
+          "id": "couples_classic_es",
+          "name": "Conexión & Salseo",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/couples/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "wrong_answers_only",
+      "name": "Solo Respuestas Incorrectas",
+      "icon": "cancel",
+      "description": "Responde rápido mentiras obvias. Si dices la verdad, ¡pierdes!",
+      "packs": [
+        {
+          "id": "wrong_answers_classic_es",
+          "name": "Preguntas Rápidas",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 2,
+          "file": "es/wrong_answers_only/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "charades",
+      "name": "Charadas en la Frente",
+      "icon": "face",
+      "description": "Coloca el móvil en la frente e inclínalo para acertar o pasar.",
+      "packs": [
+        {
+          "id": "charades_movies_es",
+          "name": "Cine y Series",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 2,
+          "file": "es/charades/movies.json"
+        }
+      ]
+    }
+  ]
 }

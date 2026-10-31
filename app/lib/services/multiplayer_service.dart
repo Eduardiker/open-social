@@ -1,95 +1,268 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
-class GamePackInfo {
+class ConnectedPlayer {
   final String id;
   final String name;
-  final String language;
-  final String rating;
-  final int version;
-  final String file;
+  final String avatar;
+  final dynamic connection; // WebSocket or Peer Connection
+  final bool isLocal;
 
-  GamePackInfo({
+  ConnectedPlayer({
     required this.id,
     required this.name,
-    required this.language,
-    required this.rating,
-    required this.version,
-    required this.file,
+    required this.avatar,
+    this.connection,
+    this.isLocal = true,
   });
-
-  factory GamePackInfo.fromJson(Map<String, dynamic> json) {
-    return GamePackInfo(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'es',
-      rating: json['rating'] ?? 'all-ages',
-      version: json['version'] ?? 1,
-      file: json['file'] ?? '',
-    );
-  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'language': language,
-    'rating': rating,
-    'version': version,
-    'file': file,
+    'avatar': avatar,
   };
 }
 
-class GameDefinition {
-  final String id;
-  final String name;
-  final String icon;
-  final String description;
-  final List<GamePackInfo> packs;
+class MultiplayerHostService {
+  HttpServer? _server;
+  final List<ConnectedPlayer> _players = [];
+  final StreamController<List<ConnectedPlayer>> _playersController = StreamController.broadcast();
+  final StreamController<Map<String, dynamic>> _eventsController = StreamController.broadcast();
 
-  GameDefinition({
-    required this.id,
-    required this.name,
-    required this.icon,
-    required this.description,
-    required this.packs,
-  });
+  String localIp = "127.0.0.1";
+  int port = 8080;
+  String roomCode = "FEST";
+  bool isRunning = false;
 
-  factory GameDefinition.fromJson(Map<String, dynamic> json) {
-    return GameDefinition(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      icon: json['icon'] ?? 'sports_esports',
-      description: json['description'] ?? '',
-      packs: (json['packs'] as List<dynamic>? ?? [])
-          .map((p) => GamePackInfo.fromJson(p))
-          .toList(),
-    );
-  }
-}
+  Stream<List<ConnectedPlayer>> get playersStream => _playersController.stream;
+  Stream<Map<String, dynamic>> get eventsStream => _eventsController.stream;
+  List<ConnectedPlayer> get players => List.unmodifiable(_players);
 
-class ContentManifest {
-  final String name;
-  final String version;
-  final List<String> languages;
-  final List<GameDefinition> games;
+  // Iniciar servidor local HTTP y WebSocket
+  Future<void> startLocalServer({int listenPort = 8080}) async {
+    port = listenPort;
+    await detectLocalIp();
 
-  ContentManifest({
-    required this.name,
-    required this.version,
-    required this.languages,
-    required this.games,
-  });
+    try {
+      _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
+      isRunning = true;
 
-  factory ContentManifest.fromJson(Map<String, dynamic> json) {
-    return ContentManifest(
-      name: json['name'] ?? '',
-      version: json['version'] ?? '1.0.0',
-      languages: List<String>.from(json['languages'] ?? ['es']),
-      games: (json['games'] as List<dynamic>? ?? [])
-          .map((g) => GameDefinition.fromJson(g))
-          .toList(),
-    );
+      _server!.listen((HttpRequest request) async {
+        if (WebSocketTransformer.isUpgradeRequest(request)) {
+          final socket = await WebSocketTransformer.upgrade(request);
+          _handleWebSocket(socket);
+        } else {
+          _handleHttpRequest(request);
+        }
+      });
+    } catch (e) {
+      isRunning = false;
+      print("Error iniciando servidor local: $e");
+    }
   }
 
-  static ContentManifest fromRawJson(String str) =>
-      ContentManifest.fromJson(json.decode(str));
+  // Detectar IP WiFi local en la subred
+  Future<String> detectLocalIp() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        includeLoopback: false,
+        type: InternetAddressType.IPv4,
+      );
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (addr.address.startsWith("192.168.") ||
+              addr.address.startsWith("10.") ||
+              addr.address.startsWith("172.")) {
+            localIp = addr.address;
+            return localIp;
+          }
+        }
+      }
+    } catch (e) {
+      print("Error obteniendo IP de interfaz: $e");
+    }
+    return localIp;
+  }
+
+  // Servir la Web App embebida desde assets
+  Future<void> _handleHttpRequest(HttpRequest request) async {
+    final res = request.response;
+    res.headers.set('Access-Control-Allow-Origin', '*');
+
+    try {
+      final html = await rootBundle.loadString('assets/webapp/index.html');
+      res.headers.contentType = ContentType.html;
+      res.write(html);
+    } catch (e) {
+      res.statusCode = HttpStatus.internalServerError;
+      res.write("Error cargando WebApp: $e");
+    }
+    await res.close();
+  }
+
+  // Procesar comunicación WebSocket con cada jugador
+  void _handleWebSocket(WebSocket socket) {
+    String? playerId;
+
+    socket.listen((event) {
+      try {
+        final data = jsonDecode(event as String);
+        final type = data['type'];
+
+        if (type == 'join') {
+          final name = data['name'] ?? 'Jugador';
+          final avatar = data['avatar'] ?? '👤';
+          playerId = "${name}_${DateTime.now().millisecondsSinceEpoch}";
+
+          final player = ConnectedPlayer(
+            id: playerId!,
+            name: name,
+            avatar: avatar,
+            connection: socket,
+            isLocal: true,
+          );
+
+          _players.removeWhere((p) => p.name == name);
+          _players.add(player);
+          _playersController.add(_players);
+
+          // Notificar al nuevo jugador y actualizar estado de sala
+          broadcastLobbyState();
+          _eventsController.add({'type': 'player_joined', 'player': player});
+        } else if (type == 'vote_submitted') {
+          _eventsController.add({
+            'type': 'vote_received',
+            'voterId': playerId,
+            'target': data['target'],
+          });
+        } else if (type == 'binary_submitted') {
+          _eventsController.add({
+            'type': 'binary_received',
+            'voterId': playerId,
+            'value': data['value'],
+          });
+        } else if (type == 'pass_bomb') {
+          _eventsController.add({
+            'type': 'bomb_passed',
+            'from': playerId,
+            'to': data['to'],
+          });
+        }
+      } catch (e) {
+        print("Error parseando mensaje WS: $e");
+      }
+    }, onDone: () {
+      if (playerId != null) {
+        _players.removeWhere((p) => p.id == playerId);
+        _playersController.add(_players);
+        broadcastLobbyState();
+        _eventsController.add({'type': 'player_left', 'playerId': playerId});
+      }
+    });
+  }
+
+  // Enviar mensaje a todos los móviles conectados
+  void broadcast(Map<String, dynamic> message) {
+    final payload = jsonEncode(message);
+    for (var player in _players) {
+      if (player.connection is WebSocket) {
+        final ws = player.connection as WebSocket;
+        if (ws.readyState == WebSocket.open) {
+          ws.add(payload);
+        }
+      }
+    }
+  }
+
+  // Enviar mensaje a un jugador específico
+  void sendToPlayer(String playerId, Map<String, dynamic> message) {
+    final player = _players.firstWhere((p) => p.id == playerId, orElse: () => _players.first);
+    if (player.connection is WebSocket) {
+      final ws = player.connection as WebSocket;
+      if (ws.readyState == WebSocket.open) {
+        ws.add(jsonEncode(message));
+      }
+    }
+  }
+
+  // Acciones de Juego
+  void broadcastLobbyState() {
+    broadcast({
+      'type': 'lobby_state',
+      'playerCount': _players.length,
+      'players': _players.map((p) => p.toJson()).toList(),
+    });
+  }
+
+  void startSecretVoting(String question, List<Map<String, String>> options) {
+    broadcast({
+      'type': 'start_vote',
+      'question': question,
+      'options': options,
+    });
+  }
+
+  void distributeUndercoverRoles(Map<String, Map<String, String>> roles) {
+    for (var player in _players) {
+      final roleInfo = roles[player.name] ?? {'role': 'CIVIL', 'word': 'PLAYA'};
+      sendToPlayer(player.id, {
+        'type': 'secret_role',
+        'role': roleInfo['role'],
+        'word': roleInfo['word'],
+      });
+    }
+  }
+
+  void startBinaryPrompt(String prompt) {
+    broadcast({
+      'type': 'start_binary',
+      'text': prompt,
+    });
+  }
+
+  void startFakeItRound(String action, String impostorName) {
+    for (var player in _players) {
+      final isImp = player.name == impostorName;
+      sendToPlayer(player.id, {
+        'type': 'fake_it_prompt',
+        'isImpostor': isImp,
+        'action': action,
+      });
+    }
+  }
+
+  void updateHotPotato(String category, String currentHolderName) {
+    final others = _players.map((p) => p.name).where((n) => n != currentHolderName).toList();
+    for (var player in _players) {
+      final isHolding = player.name == currentHolderName;
+      sendToPlayer(player.id, {
+        'type': 'bomb_holding',
+        'isHolding': isHolding,
+        'category': category,
+        'holderName': currentHolderName,
+        'others': others,
+      });
+    }
+  }
+
+  void sendPenaltyAlert(String playerName, String reason) {
+    final player = _players.firstWhere((p) => p.name == playerName, orElse: () => _players.first);
+    sendToPlayer(player.id, {
+      'type': 'penalty_alert',
+      'reason': reason,
+    });
+  }
+
+  void resetToLobby() {
+    broadcast({'type': 'reset_to_lobby'});
+  }
+
+  Future<void> stop() async {
+    isRunning = false;
+    await _server?.close(force: true);
+    _players.clear();
+    _playersController.add(_players);
+  }
 }
