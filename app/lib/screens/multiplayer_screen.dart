@@ -2,7 +2,15 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/multiplayer_service.dart';
+
+class _FloatingReactionItem {
+  final String id;
+  final String emoji;
+  final double xPos;
+  _FloatingReactionItem({required this.id, required this.emoji, required this.xPos});
+}
 
 class MultiplayerHostScreen extends StatefulWidget {
   final Function(String?) onPenalty;
@@ -46,6 +54,146 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   final Map<String, int> sessionVotesReceived = {}; // player -> total votes
   final Map<String, int> sessionGuiltyCount = {}; // player -> total 'Yo Sí'
   final Map<String, int> sessionBombExplosions = {}; // player -> total explosions
+
+  // Salseo Anónimo (Persistido en el dispositivo del Host con SharedPreferences)
+  List<String> customHostVoteQuestions = [];
+  List<String> customHostBinaryPrompts = [];
+  final List<_FloatingReactionItem> _activeReactions = [];
+
+  Future<void> _loadCustomPrompts() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        customHostVoteQuestions = prefs.getStringList('jaleo_custom_vote_prompts') ?? [];
+        customHostBinaryPrompts = prefs.getStringList('jaleo_custom_binary_prompts') ?? [];
+      });
+    }
+  }
+
+  Future<void> _saveCustomPrompt(String category, String prompt) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (category == 'vote') {
+      customHostVoteQuestions.add(prompt);
+      await prefs.setStringList('jaleo_custom_vote_prompts', customHostVoteQuestions);
+    } else {
+      customHostBinaryPrompts.add(prompt);
+      await prefs.setStringList('jaleo_custom_binary_prompts', customHostBinaryPrompts);
+    }
+  }
+
+  Future<void> _clearCustomPrompts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('jaleo_custom_vote_prompts');
+    await prefs.remove('jaleo_custom_binary_prompts');
+    if (mounted) {
+      setState(() {
+        customHostVoteQuestions.clear();
+        customHostBinaryPrompts.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("🧹 Salseo anónimo borrado correctamente.")),
+      );
+    }
+  }
+
+  void _showCustomPromptsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2130),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_person_rounded, color: Color(0xFFE17055)),
+            SizedBox(width: 8),
+            Text("Salseo Anónimo", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: customHostVoteQuestions.isEmpty && customHostBinaryPrompts.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    "Aún no hay preguntas anónimas guardadas en este móvil.\nTus amigos pueden enviarlas desde su pantalla web pulsando '🤫 Salseo Anónimo'.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                )
+              : ListView(
+                  shrinkWrap: true,
+                  children: [
+                    if (customHostVoteQuestions.isNotEmpty) ...[
+                      const Text("🗳️ ¿Quién es más...? :", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00CEC9), fontSize: 12)),
+                      const SizedBox(height: 6),
+                      ...customHostVoteQuestions.map((q) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text("• ", style: TextStyle(color: Colors.white54)),
+                                Expanded(child: Text(q, style: const TextStyle(fontSize: 12, color: Colors.white))),
+                              ],
+                            ),
+                          )),
+                      const SizedBox(height: 12),
+                    ],
+                    if (customHostBinaryPrompts.isNotEmpty) ...[
+                      const Text("🍻 Yo Nunca :", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF7675), fontSize: 12)),
+                      const SizedBox(height: 6),
+                      ...customHostBinaryPrompts.map((q) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text("• ", style: TextStyle(color: Colors.white54)),
+                                Expanded(child: Text(q, style: const TextStyle(fontSize: 12, color: Colors.white))),
+                              ],
+                            ),
+                          )),
+                    ],
+                  ],
+                ),
+        ),
+        actions: [
+          if (customHostVoteQuestions.isNotEmpty || customHostBinaryPrompts.isNotEmpty)
+            TextButton.icon(
+              icon: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFFF7675), size: 18),
+              label: const Text("Borrar todas", style: TextStyle(color: Color(0xFFFF7675))),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _clearCustomPrompts();
+              },
+            ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C5CE7)),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("Cerrar", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _triggerFloatingReaction(String emoji) {
+    if (!mounted) return;
+    final randX = 0.15 + Random().nextDouble() * 0.7;
+    final item = _FloatingReactionItem(
+      id: "${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1000)}",
+      emoji: emoji,
+      xPos: randX,
+    );
+    setState(() {
+      _activeReactions.add(item);
+    });
+    Future.delayed(const Duration(milliseconds: 1700), () {
+      if (mounted) {
+        setState(() {
+          _activeReactions.removeWhere((r) => r.id == item.id);
+        });
+      }
+    });
+  }
 
   // Estado del minijuego activo
   String activeGame = 'lobby'; // 'lobby', 'vote', 'undercover', 'binary', 'fakeit', 'hotpotato'
@@ -95,6 +243,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCustomPrompts();
     _initHost();
   }
 
@@ -152,6 +301,38 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           });
         }
         _hostService.updateHotPotato(currentQuestion, currentBombHolder!);
+      } else if (type == 'anonymous_prompt') {
+        final text = (event['text'] ?? '').toString().trim();
+        final cat = (event['category'] ?? 'vote').toString();
+        if (text.isNotEmpty) {
+          _saveCustomPrompt(cat, text);
+          if (mounted) {
+            setState(() {});
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Text("🤫", style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "¡Nuevo salseo anónimo guardado: '$text'!",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF6C5CE7),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } else if (type == 'reaction') {
+        final emoji = (event['emoji'] ?? '🔥').toString();
+        _triggerFloatingReaction(emoji);
       }
     });
 
@@ -413,25 +594,35 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   }
 
   List<String> get activeSecretQuestions {
+    List<String> pool;
     switch (partyMode) {
       case 'picante':
-        return [...secretVotePicante, ...secretVoteColegas];
+        pool = [...secretVotePicante, ...secretVoteColegas];
+        break;
       case 'tranqui':
-        return secretVoteTranqui;
+        pool = secretVoteTranqui;
+        break;
       default:
-        return secretVoteColegas;
+        pool = secretVoteColegas;
+        break;
     }
+    return [...pool, ...customHostVoteQuestions];
   }
 
   List<String> get activeYoNuncaPrompts {
+    List<String> pool;
     switch (partyMode) {
       case 'picante':
-        return [...yoNuncaPicante, ...yoNuncaColegas];
+        pool = [...yoNuncaPicante, ...yoNuncaColegas];
+        break;
       case 'tranqui':
-        return yoNuncaTranqui;
+        pool = yoNuncaTranqui;
+        break;
       default:
-        return yoNuncaColegas;
+        pool = yoNuncaColegas;
+        break;
     }
+    return [...pool, ...customHostBinaryPrompts];
   }
 
   // Iniciar Votación Secreta
@@ -765,47 +956,65 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
-        child: Column(
-          children: [
-            if (activeGame == 'lobby') ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00CEC9).withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF00CEC9).withOpacity(0.4)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.wifi_rounded, color: Color(0xFF00CEC9), size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text("CONEXIÓN LOCAL DIRECTA", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF00CEC9), letterSpacing: 1.2)),
-                          SizedBox(height: 2),
-                          Text("Misma red WiFi o 'Zona WiFi / Compartir Internet' de este móvil. Sin lag y sin internet.", style: TextStyle(fontSize: 11, color: Colors.white70)),
-                        ],
-                      ),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
+            child: Column(
+              children: [
+                if (activeGame == 'lobby') ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00CEC9).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF00CEC9).withOpacity(0.4)),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-            ],
+                    child: Row(
+                      children: [
+                        const Icon(Icons.wifi_rounded, color: Color(0xFF00CEC9), size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text("CONEXIÓN LOCAL DIRECTA", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF00CEC9), letterSpacing: 1.2)),
+                              SizedBox(height: 2),
+                              Text("Misma red WiFi o 'Zona WiFi / Compartir Internet' de este móvil. Sin lag y sin internet.", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
-            // CONTENIDO SEGÚN ESTADO DE JUEGO
-            Expanded(
-              child: activeGame == 'lobby'
-                  ? _buildLobbyView()
-                  : _buildActiveGameView(),
+                // CONTENIDO SEGÚN ESTADO DE JUEGO
+                Expanded(
+                  child: activeGame == 'lobby'
+                      ? _buildLobbyView()
+                      : _buildActiveGameView(),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          // Capa de Reacciones Flotantes en Vivo
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Stack(
+                children: _activeReactions.map((r) {
+                  return _AnimatedFloatingEmoji(
+                    key: ValueKey(r.id),
+                    emoji: r.emoji,
+                    xPos: r.xPos,
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -998,6 +1207,54 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             ),
           ),
         ],
+        const SizedBox(height: 10),
+
+        // Tarjeta de Salseo Anónimo Local Guardado
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE17055).withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE17055).withOpacity(0.4)),
+          ),
+          child: Row(
+            children: [
+              const Text("🤫", style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("SALSEO ANÓNIMO GUARDADO",
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFFE17055), letterSpacing: 1.1)),
+                    const SizedBox(height: 2),
+                    Text(
+                      (customHostVoteQuestions.length + customHostBinaryPrompts.length) > 0
+                          ? "${customHostVoteQuestions.length + customHostBinaryPrompts.length} pregunta(s) enviadas por invitados"
+                          : "Tus amigos pueden enviar preguntas secretas desde su móvil",
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFE17055),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  backgroundColor: const Color(0xFFE17055).withOpacity(0.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: _showCustomPromptsDialog,
+                child: Text(
+                  (customHostVoteQuestions.length + customHostBinaryPrompts.length) > 0
+                      ? "Ver (${customHostVoteQuestions.length + customHostBinaryPrompts.length})"
+                      : "Ver",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 14),
 
         // Jugadores Conectados
@@ -2286,6 +2543,81 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _AnimatedFloatingEmoji extends StatefulWidget {
+  final String emoji;
+  final double xPos;
+
+  const _AnimatedFloatingEmoji({super.key, required this.emoji, required this.xPos});
+
+  @override
+  State<_AnimatedFloatingEmoji> createState() => _AnimatedFloatingEmojiState();
+}
+
+class _AnimatedFloatingEmojiState extends State<_AnimatedFloatingEmoji> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _slideAnimation;
+  late final Animation<double> _opacityAnimation;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..forward();
+    _slideAnimation = Tween<double>(begin: 0.85, end: 0.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 55),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.0), weight: 30),
+    ]).animate(_controller);
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0.4, end: 1.2), weight: 25),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.2, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 55),
+    ]).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Align(
+          alignment: FractionalOffset(widget.xPos, _slideAnimation.value),
+          child: Opacity(
+            opacity: _opacityAnimation.value,
+            child: Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withOpacity(0.35),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Text(widget.emoji, style: const TextStyle(fontSize: 34)),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

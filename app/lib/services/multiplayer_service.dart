@@ -223,6 +223,18 @@ class MultiplayerHostService {
             'from': playerId,
             'to': data['to'],
           });
+        } else if (type == 'anonymous_prompt') {
+          _eventsController.add({
+            'type': 'anonymous_prompt',
+            'category': data['category'] ?? 'vote',
+            'text': (data['text'] ?? '').toString().trim(),
+          });
+        } else if (type == 'reaction') {
+          _eventsController.add({
+            'type': 'reaction',
+            'emoji': data['emoji'] ?? '🔥',
+            'from': playerName ?? 'Invitado',
+          });
         }
       } catch (e) {
         print("Error parseando mensaje WS: $e");

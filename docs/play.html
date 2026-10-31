@@ -337,6 +337,19 @@
       50% { transform: scale(1.08); }
       100% { transform: scale(1); }
     }
+
+    .reaction-btn {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      line-height: 1;
+      transition: transform 0.15s ease;
+    }
+    .reaction-btn:active {
+      transform: scale(1.4);
+    }
   </style>
 </head>
 <body>
@@ -604,6 +617,52 @@
         </button>
       </div>
     </div>
+
+    <!-- BARRA FLOTANTE DE REACCIONES Y SALSEO (Visible una vez conectado) -->
+    <div id="live-reaction-bar" style="display: none; position: sticky; bottom: 8px; z-index: 100; margin-top: auto; padding-top: 10px;">
+      <div style="background: rgba(20, 23, 36, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 30px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+        <div style="display: flex; gap: 6px;">
+          <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
+          <button class="reaction-btn" onclick="sendReaction('🔥')">🔥</button>
+          <button class="reaction-btn" onclick="sendReaction('💀')">💀</button>
+          <button class="reaction-btn" onclick="sendReaction('🍻')">🍻</button>
+          <button class="reaction-btn" onclick="sendReaction('🤡')">🤡</button>
+        </div>
+        <button onclick="openPromptModal()" style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: #fff; border: none; border-radius: 20px; padding: 6px 12px; font-weight: 800; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(108,92,231,0.4);">
+          <span>🤫</span> Salseo
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL DE SALSEO ANÓNIMO -->
+    <div id="prompt-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 200; align-items: flex-end; justify-content: center;">
+      <div style="background: #1e2130; border-top: 2px solid var(--accent); border-radius: 24px 24px 0 0; width: 100%; max-width: 480px; padding: 24px 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="font-weight: 900; font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 6px;">
+            <span>🤫</span> Salseo Anónimo
+          </div>
+          <button onclick="closePromptModal()" style="background: none; border: none; color: #aaa; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+          Escribe una pregunta para el grupo. <strong>Nadie sabrá quién la escribió</strong> y se guardará en el dispositivo del Host para esta y futuras partidas.
+        </p>
+        
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button id="cat-vote-btn" onclick="selectPromptCat('vote')" style="flex: 1; padding: 8px; border-radius: 12px; border: 1.5px solid var(--accent); background: rgba(0,206,201,0.2); color: #fff; font-size: 0.75rem; font-weight: 800; cursor: pointer;">
+            🗳️ ¿Quién es más...?
+          </button>
+          <button id="cat-binary-btn" onclick="selectPromptCat('binary')" style="flex: 1; padding: 8px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #aaa; font-size: 0.75rem; font-weight: 800; cursor: pointer;">
+            🍻 Yo Nunca...
+          </button>
+        </div>
+
+        <textarea id="prompt-input" rows="3" maxlength="120" placeholder="¿Quién de aquí ha tenido un lío con el ex de un amigo?" style="width: 100%; box-sizing: border-box; background: #141724; border: 1px solid var(--card-border); border-radius: 14px; color: #fff; padding: 12px; font-size: 0.9rem; resize: none; margin-bottom: 14px; outline: none;"></textarea>
+
+        <button class="btn btn-primary" onclick="submitAnonymousPrompt()" style="width: 100%; background: var(--accent); color: #000; font-weight: 900;">
+          🚀 Enviar al Mazo en Secreto
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -776,6 +835,74 @@
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       const active = document.getElementById(screenId);
       if (active) active.classList.add('active');
+      const reactionRow = document.getElementById('live-reaction-bar');
+      if (reactionRow) {
+        reactionRow.style.display = (screenId !== 'screen-login') ? 'block' : 'none';
+      }
+    }
+
+    let activePromptCat = 'vote';
+
+    function sendReaction(emoji) {
+      SoundFX.click();
+      if (navigator.vibrate) navigator.vibrate(30);
+      sendData({ type: 'reaction', emoji: emoji });
+    }
+
+    function openPromptModal() {
+      SoundFX.click();
+      const m = document.getElementById('prompt-modal');
+      if (m) m.style.display = 'flex';
+      const input = document.getElementById('prompt-input');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function closePromptModal() {
+      const m = document.getElementById('prompt-modal');
+      if (m) m.style.display = 'none';
+    }
+
+    function selectPromptCat(cat) {
+      SoundFX.click();
+      activePromptCat = cat;
+      const bVote = document.getElementById('cat-vote-btn');
+      const bBinary = document.getElementById('cat-binary-btn');
+      const input = document.getElementById('prompt-input');
+      if (cat === 'vote') {
+        bVote.style.border = '1.5px solid var(--accent)';
+        bVote.style.background = 'rgba(0,206,201,0.2)';
+        bVote.style.color = '#fff';
+        bBinary.style.border = '1.5px solid rgba(255,255,255,0.15)';
+        bBinary.style.background = 'rgba(255,255,255,0.05)';
+        bBinary.style.color = '#aaa';
+        if (input) input.placeholder = '¿Quién de aquí ha tenido un lío con el ex de un amigo?';
+      } else {
+        bBinary.style.border = '1.5px solid var(--accent)';
+        bBinary.style.background = 'rgba(0,206,201,0.2)';
+        bBinary.style.color = '#fff';
+        bVote.style.border = '1.5px solid rgba(255,255,255,0.15)';
+        bVote.style.background = 'rgba(255,255,255,0.05)';
+        bVote.style.color = '#aaa';
+        if (input) input.placeholder = 'Yo nunca he stalkeado el perfil de un compañero de trabajo...';
+      }
+    }
+
+    function submitAnonymousPrompt() {
+      const input = document.getElementById('prompt-input');
+      const val = (input ? input.value : '').trim();
+      if (!val) return;
+      SoundFX.fanfare();
+      if (navigator.vibrate) navigator.vibrate([40, 40, 80]);
+      sendData({
+        type: 'anonymous_prompt',
+        category: activePromptCat,
+        text: val
+      });
+      closePromptModal();
+      alert('🤫 ¡Salseo anónimo enviado con éxito al mazo del Host!');
     }
 
     function updateStatus(connected, text) {
