@@ -576,11 +576,20 @@
     // Configuración y Estado del Cliente
     const avatars = ['🦊', '🐯', '🐼', '🐸', '🚀', '🍺', '🍕', '👑', '🔥', '💎', '🥑', '🦄'];
     let selectedAvatar = avatars[0];
-    let connectionMode = 'local'; // 'local' (WiFi) o 'p2p' (WebRTC)
+    let connectionMode = 'local';
     let socket = null;
-    let peer = null;
-    let peerConn = null;
+    let savedPlayerName = '';
     let currentSecretData = { role: 'CIVIL', word: 'PLAYA' };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     // Inicialización al cargar la web
     window.addEventListener('DOMContentLoaded', () => {
@@ -653,12 +662,32 @@
         badge.className = 'badge-status status-connected';
         dot.style.color = 'var(--accent)';
         label.innerText = text || 'En línea';
+        badge.onclick = null;
       } else {
         badge.className = 'badge-status status-disconnected';
         dot.style.color = 'var(--danger)';
         label.innerText = text || 'Desconectado';
+        badge.onclick = () => {
+          if (savedPlayerName) {
+            connectLocalWebSocket(savedPlayerName);
+          }
+        };
       }
     }
+
+    // Auto-reconexión silenciosa al desbloquear o volver a la pestaña
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && (!socket || socket.readyState !== WebSocket.OPEN) && savedPlayerName) {
+        console.log("Pestaña activa, reconectando al host...");
+        connectLocalWebSocket(savedPlayerName);
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if ((!socket || socket.readyState !== WebSocket.OPEN) && savedPlayerName) {
+        connectLocalWebSocket(savedPlayerName);
+      }
+    });
 
     // ==========================================
     // CONEXIÓN AL HOST LOCAL
@@ -670,6 +699,7 @@
         return;
       }
 
+      savedPlayerName = name;
       if (navigator.vibrate) navigator.vibrate(50);
       document.getElementById('wait-avatar').innerText = selectedAvatar;
       document.getElementById('wait-player-name').innerText = `${selectedAvatar} ${name}`;
@@ -690,6 +720,7 @@
     }
 
     function connectLocalWebSocket(name) {
+      savedPlayerName = name;
       let host = document.getElementById('host-ip').value.trim();
       if (!host) host = window.location.host || '192.168.1.1:8080';
       const cleanHost = host.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
@@ -698,6 +729,9 @@
       updateStatus(false, 'Conectando...');
 
       try {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
         socket = new WebSocket(wsUrl);
 
         socket.onopen = () => {
@@ -720,16 +754,15 @@
         };
 
         socket.onclose = () => {
-          updateStatus(false, 'Desconectado');
+          updateStatus(false, 'Desconectado (Toca aquí para reconectar)');
         };
 
         socket.onerror = (err) => {
           console.error("Error WebSocket:", err);
-          updateStatus(false, 'Error conexión');
-          alert("No se pudo conectar al host local. Revisa que estés en la misma WiFi o conectado a la 'Zona WiFi' del Host.");
+          updateStatus(false, 'Error conexión (Toca para reconectar)');
         };
       } catch (err) {
-        alert("Error de conexión: " + err.message);
+        console.error("Error de conexión:", err);
       }
     }
 
@@ -798,7 +831,7 @@
           (msg.options || []).forEach(opt => {
             const btn = document.createElement('div');
             btn.className = 'vote-btn';
-            btn.innerHTML = `<span>${opt.avatar || '👤'} ${opt.name}</span> <span>➔</span>`;
+            btn.innerHTML = `<span>${opt.avatar || '👤'} ${escapeHtml(opt.name)}</span> <span>➔</span>`;
             btn.onclick = () => {
               document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
               btn.classList.add('selected');
@@ -866,7 +899,7 @@
               const b = document.createElement('div');
               b.className = 'vote-btn';
               b.style.borderColor = 'var(--danger)';
-              b.innerHTML = `<span>💣 Pasar a <strong>${otherName}</strong></span> <span>➔</span>`;
+              b.innerHTML = `<span>💣 Pasar a <strong>${escapeHtml(otherName)}</strong></span> <span>➔</span>`;
               b.onclick = () => {
                 if (navigator.vibrate) navigator.vibrate(80);
                 sendData({ type: 'pass_bomb', to: otherName });

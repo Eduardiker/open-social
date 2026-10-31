@@ -619,10 +619,18 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                     qrApi,
                     width: 140,
                     height: 140,
-                    errorBuilder: (ctx, err, stack) => const SizedBox(
+                    errorBuilder: (ctx, err, stack) => SizedBox(
                       width: 140,
                       height: 140,
-                      child: Center(child: Icon(Icons.qr_code_2_rounded, size: 80, color: Colors.black54)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.wifi_tethering_rounded, size: 44, color: Color(0xFF6C5CE7)),
+                          SizedBox(height: 6),
+                          Text("Modo Offline", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87)),
+                          Text("Abre en navegador", style: TextStyle(fontSize: 10, color: Colors.black54)),
+                        ],
+                      ),
                     ),
                   ),
                 ),

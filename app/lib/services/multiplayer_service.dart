@@ -89,26 +89,36 @@ class MultiplayerHostService {
     });
   }
 
-  // Iniciar servidor local HTTP y WebSocket
+  // Iniciar servidor local HTTP y WebSocket con fallback de puertos
   Future<void> startLocalServer({int listenPort = 8080}) async {
-    port = listenPort;
     await detectLocalIp();
+    final portsToTry = [listenPort, 8081, 8082, 8088, 8000];
 
-    try {
-      _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-      isRunning = true;
+    for (var p in portsToTry) {
+      try {
+        _server = await HttpServer.bind(InternetAddress.anyIPv4, p);
+        port = p;
+        isRunning = true;
 
-      _server!.listen((HttpRequest request) async {
-        if (WebSocketTransformer.isUpgradeRequest(request)) {
-          final socket = await WebSocketTransformer.upgrade(request);
-          _handleWebSocket(socket);
-        } else {
-          _handleHttpRequest(request);
-        }
-      });
-    } catch (e) {
+        _server!.listen((HttpRequest request) async {
+          if (WebSocketTransformer.isUpgradeRequest(request)) {
+            final socket = await WebSocketTransformer.upgrade(request);
+            _handleWebSocket(socket);
+          } else {
+            _handleHttpRequest(request);
+          }
+        }, onError: (err) {
+          print("Error en HttpServer stream: $err");
+        });
+        break;
+      } catch (e) {
+        print("Puerto $p ocupado o inaccesible: $e");
+      }
+    }
+
+    if (_server == null) {
       isRunning = false;
-      print("Error iniciando servidor local: $e");
+      print("No se pudo iniciar el servidor local en ningún puerto");
     }
   }
 
@@ -141,12 +151,18 @@ class MultiplayerHostService {
     res.headers.set('Access-Control-Allow-Origin', '*');
 
     try {
-      final html = await rootBundle.loadString('assets/webapp/index.html');
-      res.headers.contentType = ContentType.html;
-      res.write(html);
+      if (request.uri.path.endsWith('.png') || request.uri.path.endsWith('.ico')) {
+        final bytes = await rootBundle.load('assets/icon/app_icon.png');
+        res.headers.contentType = ContentType('image', 'png');
+        res.add(bytes.buffer.asUint8List());
+      } else {
+        final html = await rootBundle.loadString('assets/webapp/index.html');
+        res.headers.contentType = ContentType.html;
+        res.write(html);
+      }
     } catch (e) {
       res.statusCode = HttpStatus.internalServerError;
-      res.write("Error cargando WebApp: $e");
+      res.write("Error cargando recurso Web: $e");
     }
     await res.close();
   }
@@ -162,20 +178,25 @@ class MultiplayerHostService {
         final type = data['type'];
 
         if (type == 'join') {
-          final name = data['name'] ?? 'Jugador';
-          playerName = name;
-          final avatar = data['avatar'] ?? '👤';
-          playerId = "${name}_${DateTime.now().millisecondsSinceEpoch}";
+          String rawName = (data['name'] ?? 'Jugador').toString().trim();
+          if (rawName.isEmpty) rawName = 'Jugador';
+          if (rawName.length > 15) rawName = rawName.substring(0, 15);
+          rawName = rawName.replaceAll(RegExp(r'[<>/\\"]'), '');
+          if (rawName.isEmpty) rawName = 'Jugador';
+
+          final avatar = (data['avatar'] ?? '👤').toString();
+          playerName = rawName;
+          playerId = "${playerName}_${DateTime.now().millisecondsSinceEpoch}";
 
           final player = ConnectedPlayer(
             id: playerId!,
-            name: name,
+            name: rawName,
             avatar: avatar,
             connection: socket,
             isLocal: true,
           );
 
-          _players.removeWhere((p) => p.name == name);
+          _players.removeWhere((p) => p.name == rawName);
           _players.add(player);
           _playersController.add(_players);
 
@@ -205,6 +226,13 @@ class MultiplayerHostService {
         }
       } catch (e) {
         print("Error parseando mensaje WS: $e");
+      }
+    }, onError: (err) {
+      if (playerId != null) {
+        _players.removeWhere((p) => p.id == playerId);
+        _playersController.add(_players);
+        broadcastLobbyState();
+        _eventsController.add({'type': 'player_left', 'playerId': playerId});
       }
     }, onDone: () {
       if (playerId != null) {
