@@ -40,7 +40,9 @@ jobs:
           rm -rf android
           flutter create --platforms=android --org com.opensocial .
           sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="[^"]*"/android:label="JALEO"/' android/app/src/main/AndroidManifest.xml
           flutter pub get
+          dart run flutter_launcher_icons
 
       - name: 🚀 Compilar APK Release
         run: |
