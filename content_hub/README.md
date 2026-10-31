@@ -21,7 +21,7 @@ El archivo [`index.json`](index.json) es el registro maestro que la app consulta
   "games": [
     {
       "id": "picolo_mode",
-      "name": "Modo Picolo (Maldiciones)",
+      "name": "Maldiciones & Duelos (Virus Party) (Maldiciones)",
       "icon": "auto_awesome",
       "description": "Virus que duran turnos, duelos 1 vs 1, votaciones y reglas globales.",
       "packs": [

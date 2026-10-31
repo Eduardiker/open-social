@@ -45,7 +45,7 @@ class OpenSocialApp extends StatelessWidget {
 }
 
 // ==========================================
-// PANTALLA PRINCIPAL: HOME, JUGADORES Y PICOLO
+// PANTALLA PRINCIPAL: HOME, JUGADORES Y MALDICIONES
 // ==========================================
 class HomeScreen extends StatefulWidget {
   final GitHubContentService contentService;
@@ -229,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Color> _gameGradients(int index) {
     final gradients = [
-      [const Color(0xFF6C5CE7), const Color(0xFF00CEC9)], // Picolo Mágico
+      [const Color(0xFF6C5CE7), const Color(0xFF00CEC9)], // Maldiciones y Virus
       [const Color(0xFFFF7675), const Color(0xFFD63031)], // Rojo Bomba
       [const Color(0xFF6C5CE7), const Color(0xFFA29BFE)], // Morado
       [const Color(0xFFFD79A8), const Color(0xFFFAB1A0)], // Coral
@@ -566,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ==========================================
-// JUEGO: MODO PICOLO (VIRUS, DUELOS Y REGLAS)
+// JUEGO: MALDICIONES Y DUELOS (VIRUS, DUELOS Y REGLAS)
 // ==========================================
 class PicoloModeScreen extends StatefulWidget {
   final GameDefinition game;
@@ -726,7 +726,7 @@ class _PicoloModeScreenState extends State<PicoloModeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Packs de Picolo", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Packs de Maldiciones", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),

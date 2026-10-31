@@ -4,8 +4,8 @@
 
 ![JALEO App Icon](app/assets/icon/app_icon.jpg)
 
-**La alternativa definitiva de código abierto a Social Gamebox y Picolo.**  
-*10 Party Games en 1 • Modo Multijugador Web por QR (sin instalar apps) • Modo Picolo con Maldiciones • 100% Offline y Privado*
+**El Party Box y juego social para grupos definitivo de código abierto.**  
+*12 Party Games en 1 • Modo Multijugador Web por QR (sin instalar apps) • Maldiciones & Virus Party • 100% Offline y Privado*
 
 [![Build Android APK](https://github.com/Eduardiker/open-social/actions/workflows/build_apk.yml/badge.svg)](https://github.com/Eduardiker/open-social/actions/workflows/build_apk.yml)
 [![Validate Content](https://github.com/Eduardiker/open-social/actions/workflows/validate_content.yml/badge.svg)](https://github.com/Eduardiker/open-social/actions/workflows/validate_content.yml)
@@ -23,7 +23,7 @@
 A diferencia de las apps comerciales que cobran suscripciones abusivas por desbloquear preguntas o requieren que todos tus amigos se descarguen una app pesada, **JALEO es libre, abierta y universal**:
 
 1. **📱 Multijugador Web Inteligente:** El anfitrión crea la sala en su móvil y muestra un **Código QR**. Tus amigos apuntan la cámara de su móvil y juegan directamente desde su navegador (Safari o Chrome) **sin descargar nada**. Funciona tanto en la misma red WiFi (100% offline) como por código de sala Online P2P.
-2. **🦠 Modo Picolo Auténtico:** Maldiciones y virus que duran turnos enteros (ej. *hablar como Batman*, *prohibido decir 'Sí/No'*), duelos 1 vs 1 cara a cara y reglas de mesa globales.
+2. **🦠 Maldiciones & Duelos (Virus Party):** Maldiciones y reglas sorpresa que duran turnos enteros (ej. *hablar con acento*, *prohibido decir 'Sí/No'*), duelos 1 vs 1 cara a cara y eventos globales para todo el grupo.
 3. **🔒 Privacidad Garantizada:** Guarda tus preguntas picantes y privadas directamente en el almacenamiento local de tu móvil (`SharedPreferences`), sin enviarlas jamás a internet.
 4. **📦 Contenido Comunitario Abierto:** Todas las preguntas, cartas y retos residen en formato JSON abierto en [`content_hub/`](content_hub/). ¡Cualquiera puede proponer preguntas y aparecerán en los móviles de todo el mundo!
 
@@ -33,7 +33,7 @@ A diferencia de las apps comerciales que cobran suscripciones abusivas por desbl
 
 | Juego | Mecánica | Modo de Juego |
 | :--- | :--- | :--- |
-| **✨ Modo Picolo** | Virus que duran rondas, duelos a muerte 1v1, reglas molestas y votaciones. Incluye 4 packs: *Previa*, *Fiesta*, *Picante +18* y *Sin Piedad*. | Pass & Play |
+| **🧪 Maldiciones & Duelos** | Virus que duran rondas, duelos a muerte 1v1, reglas molestas y votaciones. Incluye 4 packs: *Previa*, *Fiesta*, *Picante +18* y *Sin Piedad*. | Pass & Play |
 | **🕵️ El Impostor (*Undercover*)** | Palabras secretas en los móviles de los invitados (ej: Playa vs Piscina). Ronda de pistas y votación para pillar al impostor. | **Multijugador Web** |
 | **💣 La Bomba (*Hot Bomb*)** | Di una palabra de la categoría y pasa el móvil antes de que el temporizador explote. | Pass & Play |
 | **🗳️ Votación Secreta (*¿Quién es más probable?*)** | Cada amigo vota en secreto desde su pantalla; la app revela porcentajes y puñaladas en directo. | **Multijugador Web** |

@@ -7,7 +7,7 @@ assignees: ''
 ---
 
 ### 🎮 ¿Para qué juego son estas preguntas?
-- [ ] Modo Picolo (Virus, Duelos o Reglas)
+- [ ] Maldiciones & Duelos (Virus Party) (Virus, Duelos o Reglas)
 - [ ] La Bomba (Categorías)
 - [ ] ¿Quién es más probable?
 - [ ] Yo Nunca

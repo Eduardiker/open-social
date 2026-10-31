@@ -1,6 +1,6 @@
 # 🍻 Guía de Contribución para JALEO (Party Box)
 
-¡Bienvenido/a a la comunidad de **JALEO**! Este proyecto es 100% de código abierto y está diseñado para que **cualquier persona pueda añadir preguntas, retos, cartas de Picolo o nuevas categorías sin necesidad de saber programar**.
+¡Bienvenido/a a la comunidad de **JALEO**! Este proyecto es 100% de código abierto y está diseñado para que **cualquier persona pueda añadir preguntas, retos, cartas de Maldiciones o nuevas categorías sin necesidad de saber programar**.
 
 Todas las preguntas de la app están organizadas en archivos de texto sencillos (**JSON**) dentro de la carpeta [`content_hub/`](content_hub/). Cuando añades preguntas aquí, ¡aparecerán automáticamente en los teléfonos de todos los usuarios del mundo al actualizar!
 
@@ -12,7 +12,7 @@ No necesitas instalar Git ni Flutter. Puedes hacerlo todo directamente desde la 
 
 ### Paso 1: Encuentra el juego que quieres ampliar
 Entra en la carpeta del idioma correspondiente, por ejemplo [`content_hub/es/`](content_hub/es/):
-* 🦠 **Modo Picolo**: `content_hub/es/picolo_mode/` (`classic.json`, `party.json`, `spicy.json`, `bar.json`)
+* 🦠 **Maldiciones & Duelos (Virus Party)**: `content_hub/es/picolo_mode/` (`classic.json`, `party.json`, `spicy.json`, `bar.json`)
 * 💣 **La Bomba**: `content_hub/es/hot_bomb/categories.json`
 * 👥 **¿Quién es más probable?**: `content_hub/es/most_likely_to/classic.json`
 * 🍺 **Yo Nunca**: `content_hub/es/never_have_i_ever/` (`classic.json`, `party.json`)
@@ -28,7 +28,7 @@ Entra en la carpeta del idioma correspondiente, por ejemplo [`content_hub/es/`](
 4. Asegúrate de poner una coma `,` entre cada elemento.
 
 ### Paso 3: Envía tus preguntas (Pull Request)
-1. Al final de la página, escribe un título breve en la caja de commit (ej: *"Añadidas 10 preguntas picantes a Modo Picolo"*).
+1. Al final de la página, escribe un título breve en la caja de commit (ej: *"Añadidas 10 preguntas picantes a Maldiciones & Duelos"*).
 2. Selecciona **"Create a new branch for this commit and start a pull request"**.
 3. Pulsa el botón verde **"Propose changes"** y luego **"Create pull request"**.
 4. ¡Listo! El sistema automático de GitHub verificará la sintaxis y nosotros revisaremos e incluiremos tus preguntas en la siguiente actualización.
@@ -37,7 +37,7 @@ Entra en la carpeta del idioma correspondiente, por ejemplo [`content_hub/es/`](
 
 ## 🧩 Variables Mágicas Disponibles
 
-En muchos juegos (como Modo Picolo o Verdad o Reto), puedes hacer que el juego sea dinámico usando los nombres de los jugadores de la fiesta:
+En muchos juegos (como Maldiciones & Duelos o Verdad o Reto), puedes hacer que el juego sea dinámico usando los nombres de los jugadores de la fiesta:
 
 * `{p1}`: Se sustituye aleatoriamente por el nombre de un jugador (ej. *"Laura"*).
 * `{p2}`: Se sustituye por otro jugador diferente de la partida (ej. *"Marcos"*).
@@ -52,8 +52,8 @@ En muchos juegos (como Modo Picolo o Verdad o Reto), puedes hacer que el juego s
 
 ## 📋 Formatos de Ejemplo por Tipo de Juego
 
-### 1. Cartas de Modo Picolo (`picolo_mode`)
-El Modo Picolo soporta varios tipos de cartas:
+### 1. Cartas de Maldiciones & Duelos (`picolo_mode`)
+El Maldiciones & Duelos soporta varios tipos de cartas:
 ```json
 // Virus / Maldición con duración de turnos:
 {
