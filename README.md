@@ -4,15 +4,12 @@
 
 ![JALEO App Icon](app/assets/icon/app_icon.jpg)
 
-## 🌐 [¡JUGAR AHORA ONLINE / MANDO WEB!](https://eduardiker.github.io/open-social/)
-**👉 Entra y juega al instante desde tu móvil: [https://eduardiker.github.io/open-social/](https://eduardiker.github.io/open-social/)**  
-*(Mando de juego directo para tus amigos: [https://eduardiker.github.io/open-social/play.html](https://eduardiker.github.io/open-social/play.html))*
+## 🚀 ACCESO RÁPIDO & DESCARGA DIRECTA
 
-<br/>
-
-[![Web App](https://img.shields.io/badge/Web%20App-Jugar%20Ahora-6C5CE7?style=for-the-badge&logo=googlechrome&logoColor=white)](https://eduardiker.github.io/open-social/)
-[![Mando Web](https://img.shields.io/badge/Mando%20M%C3%B3vil-play.html-00CEC9?style=for-the-badge&logo=safari&logoColor=white)](https://eduardiker.github.io/open-social/play.html)
-[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-FDCB6E?style=for-the-badge&logo=android&logoColor=black)](https://github.com/Eduardiker/open-social/releases)
+| 🌐 JUGAR ONLINE EN LA WEB | 📲 DESCARGAR APK ANDROID (HOST) | 🎮 MANDO MÓVIL INVITADOS |
+| :---: | :---: | :---: |
+| [![Web App](https://img.shields.io/badge/Web%20App-Jugar%20Ahora-6C5CE7?style=for-the-badge&logo=googlechrome&logoColor=white)](https://eduardiker.github.io/open-social/) | [![Descargar APK](https://img.shields.io/badge/Descargar%20APK-v1.3.0%20(Directo)-FDCB6E?style=for-the-badge&logo=android&logoColor=black)](https://github.com/Eduardiker/open-social/releases/download/v1.3.0/JALEO.apk) | [![Mando Web](https://img.shields.io/badge/Mando%20M%C3%B3vil-play.html-00CEC9?style=for-the-badge&logo=safari&logoColor=white)](https://eduardiker.github.io/open-social/play.html) |
+| [**👉 Entrar a la Web App**](https://eduardiker.github.io/open-social/) | [**⬇️ Descarga Directa JALEO.apk**](https://github.com/Eduardiker/open-social/releases/download/v1.3.0/JALEO.apk) | [**👉 Abrir play.html**](https://eduardiker.github.io/open-social/play.html) |
 
 <br/>
 
