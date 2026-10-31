@@ -21,6 +21,13 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   String roomCode = "FEST";
   List<ConnectedPlayer> connectedPlayers = [];
 
+  // Configuración del Host como jugador activo
+  String hostPlayerName = "Host (Tú)";
+  String hostPlayerAvatar = "👑";
+  bool hostParticipates = true;
+  bool isHostRoleRevealed = false;
+  Map<String, Map<String, String>> currentUndercoverRoles = {};
+
   // Estado del minijuego activo
   String activeGame = 'lobby'; // 'lobby', 'vote', 'undercover', 'binary', 'fakeit', 'hotpotato'
   String currentQuestion = '';
@@ -75,6 +82,10 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   Future<void> _initHost() async {
     roomCode = _generateRoomCode();
     await _hostService.startLocalServer(listenPort: 8080);
+
+    if (hostParticipates) {
+      _hostService.addHostPlayer(name: hostPlayerName, avatar: hostPlayerAvatar);
+    }
 
     _playerSub = _hostService.playersStream.listen((players) {
       setState(() {
@@ -176,6 +187,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       }
     }
 
+    currentUndercoverRoles = roles;
+    isHostRoleRevealed = false;
     _hostService.distributeUndercoverRoles(roles);
 
     setState(() {
@@ -213,6 +226,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     final act = fakeItActions[Random().nextInt(fakeItActions.length)];
     final imp = connectedPlayers[Random().nextInt(connectedPlayers.length)].name;
     impostorPlayer = imp;
+    isHostRoleRevealed = false;
 
     _hostService.startFakeItRound(act, imp);
 
@@ -410,7 +424,47 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
+
+        // Tarjeta de Participación del Host
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: hostParticipates ? const Color(0xFF6C5CE7).withOpacity(0.18) : Colors.white10,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: hostParticipates ? const Color(0xFF6C5CE7) : Colors.white24),
+          ),
+          child: Row(
+            children: [
+              Text(hostPlayerAvatar, style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Jugar también como Host ($hostPlayerName)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                    const Text("Vota, recibe la bomba y juega desde esta pantalla", style: TextStyle(fontSize: 10, color: Colors.white54)),
+                  ],
+                ),
+              ),
+              Switch(
+                value: hostParticipates,
+                activeColor: const Color(0xFF00CEC9),
+                onChanged: (val) {
+                  setState(() {
+                    hostParticipates = val;
+                    if (val) {
+                      _hostService.addHostPlayer(name: hostPlayerName, avatar: hostPlayerAvatar);
+                    } else {
+                      _hostService.removeHostPlayer();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
 
         // Jugadores Conectados
         Row(
@@ -702,6 +756,47 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             }).toList(),
           ),
         ),
+        if (hostParticipates) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: const Color(0xFF1E2130), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF6C5CE7))),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("👑 Tu Voto Secreto (Host):", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFDCB6E))),
+                    Text(currentVotes[hostPlayerName] != null ? "✅ Votado: ${currentVotes[hostPlayerName]}" : "Toca a quién votas", style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: connectedPlayers.map((p) {
+                      final isSelected = currentVotes[hostPlayerName] == p.name;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6.0),
+                        child: ChoiceChip(
+                          avatar: Text(p.avatar),
+                          label: Text(p.name, style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF00CEC9),
+                          backgroundColor: Colors.white10,
+                          onSelected: (_) {
+                            _hostService.submitHostVote(p.name);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -776,6 +871,30 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             }).toList(),
           ),
         ),
+        if (hostParticipates) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: const Color(0xFF1E2130), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF6C5CE7))),
+            child: Row(
+              children: [
+                const Text("👑 Tu Respuesta:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFDCB6E))),
+                const Spacer(),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF7675), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
+                  onPressed: () => _hostService.submitHostBinary("YES"),
+                  child: const Text("¡Yo Sí! 🙋", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00B894), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
+                  onPressed: () => _hostService.submitHostBinary("NO"),
+                  child: const Text("Yo Nunca 😇", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -790,14 +909,54 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         const Text("Palabras enviadas en secreto a cada móvil.", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
         const SizedBox(height: 8),
         Text("Cada jugador debe decir una pista por turnos.", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+        if (hostParticipates) ...[
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isHostRoleRevealed = !isHostRoleRevealed;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6C5CE7).withOpacity(0.25),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF6C5CE7), width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("👑 Tu Rol Secreto (Host): ", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFDCB6E))),
+                      Icon(isHostRoleRevealed ? Icons.visibility_off : Icons.visibility, size: 18, color: const Color(0xFF00CEC9)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isHostRoleRevealed
+                        ? "${currentUndercoverRoles[hostPlayerName]?['word'] ?? 'Desconocido'} (${currentUndercoverRoles[hostPlayerName]?['role']})"
+                        : "Toca para ver / ocultar tu palabra",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: isHostRoleRevealed ? const Color(0xFF00CEC9) : Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text("Revelar Impostor (Solo Host): ", style: TextStyle(fontSize: 12, color: Colors.white54)),
+              const Text("Revelar Impostor al final: ", style: TextStyle(fontSize: 12, color: Colors.white54)),
               Text(impostorPlayer ?? "Desconocido", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF7675))),
             ],
           ),
@@ -815,7 +974,47 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         const Text("¡Acción enviada a los móviles!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
         Text("Contad hasta 3 y actuad a la vez.", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+        if (hostParticipates) ...[
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isHostRoleRevealed = !isHostRoleRevealed;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE84393).withOpacity(0.25),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE84393), width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("👑 Tu Acción Secreta (Host): ", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFDCB6E))),
+                      Icon(isHostRoleRevealed ? Icons.visibility_off : Icons.visibility, size: 18, color: const Color(0xFF00CEC9)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isHostRoleRevealed
+                        ? (hostPlayerName == impostorPlayer ? "🕵️ ¡ERES EL IMPOSTOR! (Finge lo que hacen los demás)" : "🎭 $currentQuestion")
+                        : "Toca para ver / ocultar tu acción",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: isHostRoleRevealed ? const Color(0xFF00CEC9) : Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
@@ -848,6 +1047,37 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             decoration: BoxDecoration(color: const Color(0xFFFF7675).withOpacity(0.2), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFFF7675))),
             child: Text("Bomba en manos de: $currentBombHolder", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFFF7675))),
           ),
+          if (hostParticipates && currentBombHolder == hostPlayerName) ...[
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF7675).withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFF7675), width: 2),
+              ),
+              child: Column(
+                children: [
+                  const Text("🔥 ¡TIENES LA BOMBA EN TU PANTALLA! 🔥", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 13)),
+                  const Text("Di una palabra rápido y toca a quién pasársela:", style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: connectedPlayers.where((p) => p.name != hostPlayerName).map((p) {
+                      return ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF7675), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                        onPressed: () {
+                          _hostService.passHostBomb(p.name);
+                        },
+                        child: Text("👉 Pasársela a ${p.name}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ] else ...[
           const Text("¡BOOOOOM! EXPLOTÓ", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFFF7675))),
           const SizedBox(height: 8),

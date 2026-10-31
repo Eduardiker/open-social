@@ -40,6 +40,53 @@ class MultiplayerHostService {
   Stream<Map<String, dynamic>> get eventsStream => _eventsController.stream;
   List<ConnectedPlayer> get players => List.unmodifiable(_players);
 
+  // Registro del Host como jugador activo
+  void addHostPlayer({required String name, required String avatar}) {
+    _players.removeWhere((p) => p.id == 'host');
+    _players.insert(0, ConnectedPlayer(
+      id: 'host',
+      name: name,
+      avatar: avatar,
+      connection: null,
+      isLocal: true,
+    ));
+    _playersController.add(List.from(_players));
+    broadcastLobbyState();
+  }
+
+  void removeHostPlayer() {
+    _players.removeWhere((p) => p.id == 'host');
+    _playersController.add(List.from(_players));
+    broadcastLobbyState();
+  }
+
+  bool get hasHostPlayer => _players.any((p) => p.id == 'host');
+
+  // Acciones emitidas directamente por el Host en la pantalla principal
+  void submitHostVote(String target) {
+    _eventsController.add({
+      'type': 'vote_received',
+      'voterId': 'host',
+      'target': target,
+    });
+  }
+
+  void submitHostBinary(String value) {
+    _eventsController.add({
+      'type': 'binary_received',
+      'voterId': 'host',
+      'value': value,
+    });
+  }
+
+  void passHostBomb(String toTarget) {
+    _eventsController.add({
+      'type': 'bomb_passed',
+      'from': 'host',
+      'to': toTarget,
+    });
+  }
+
   // Iniciar servidor local HTTP y WebSocket
   Future<void> startLocalServer({int listenPort = 8080}) async {
     port = listenPort;
