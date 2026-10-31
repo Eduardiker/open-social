@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidad — JALEO</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #2D3748;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      background: #F7FAFC;
+    }
+    .card {
+      background: #FFFFFF;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    h1 { color: #1A202C; font-size: 2rem; margin-bottom: 8px; }
+    h2 { color: #2B6CB0; font-size: 1.3rem; margin-top: 28px; border-bottom: 2px solid #EDF2F7; padding-bottom: 8px; }
+    p, li { color: #4A5568; }
+    ul { padding-left: 20px; }
+    .badge {
+      display: inline-block;
+      background: #EBF8FF;
+      color: #3182CE;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Última actualización: 31 de Octubre de 2026</span>
+    <h1>Política de Privacidad de JALEO</h1>
+    <p>Esta Política de Privacidad describe cómo <strong>JALEO: Party Box & Drinking Games</strong> (en adelante, "la Aplicación") trata la información de los usuarios.</p>
+
+    <h2>1. Compromiso de Privacidad y No Recopilación de Datos Personales</h2>
+    <p>JALEO es una aplicación diseñada bajo la filosofía <strong>Privacy-First</strong> y de código abierto. <strong>No recopilamos, no almacenamos en servidores externos, no vendemos ni compartimos ninguna información personal</strong> identificable de los usuarios.</p>
+    <ul>
+      <li>No requerimos registro de cuenta, correo electrónico, número de teléfono ni contraseñas.</li>
+      <li>Los nombres o apodos que introduces para jugar se utilizan exclusivamente durante la partida activa.</li>
+      <li><strong>Preguntas Privadas y Personalizadas:</strong> Cualquier pregunta creada por el usuario dentro de la app se guarda exclusivamente en el almacenamiento local del dispositivo mediante almacenamiento cifrado/local (SharedPreferences) y nunca se transmite a ningún servidor de internet.</li>
+    </ul>
+
+    <h2>2. Permisos del Dispositivo</h2>
+    <p>La Aplicación puede solicitar los siguientes permisos estrictamente necesarios para su funcionamiento:</p>
+    <ul>
+      <li><strong>Acceso a Red / Internet (android.permission.INTERNET):</strong> Utilizado únicamente para sincronizar las preguntas de código abierto desde el repositorio de GitHub y para habilitar el modo multijugador local o punto a punto (WebRTC / WebSockets).</li>
+      <li><strong>Vibración (android.permission.VIBRATE):</strong> Utilizado exclusivamente para proporcionar respuesta háptica en las tarjetas de juego (por ejemplo, en el temporizador de La Bomba o al revelar roles secretos).</li>
+    </ul>
+
+    <h2>3. Comunicaciones Multijugador (Misma WiFi / P2P)</h2>
+    <p>En el modo Sala Multijugador:</p>
+    <ul>
+      <li>Las comunicaciones en modo WiFi se realizan de forma directa entre los dispositivos dentro de tu propia red local, sin pasar por servidores en la nube.</li>
+      <li>En modo P2P, los datos de votación se transmiten de forma efímera a través de canales de datos cifrados de WebRTC y desaparecen al finalizar la ronda.</li>
+    </ul>
+
+    <h2>4. Publicidad y Rastreadores</h2>
+    <p>La Aplicación es 100% libre de publicidad, rastreadores publicitarios, analíticas invasivas y SDKs de terceros para monetización de datos.</p>
+
+    <h2>5. Contacto</h2>
+    <p>Si tienes cualquier duda respecto a esta política de privacidad o deseas revisar el código fuente completo de la aplicación, puedes acceder a nuestro repositorio abierto en GitHub: <a href="https://github.com/Eduardiker/open-social">github.com/Eduardiker/open-social</a>.</p>
+  </div>
+</body>
+</html>

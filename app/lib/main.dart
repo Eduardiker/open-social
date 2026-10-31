@@ -780,7 +780,7 @@ class _PicoloModeScreenState extends State<PicoloModeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Modo Picolo'),
+        title: const Text('Maldiciones & Duelos'),
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(

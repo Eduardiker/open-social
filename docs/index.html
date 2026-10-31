@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Open Social - Mando de Jugador</title>
+  <!-- PeerJS para multijugador P2P Online con código de 4 letras -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    :root {
+      --bg: #0F111A;
+      --card-bg: #1E2130;
+      --card-border: #2D3250;
+      --primary: #6C5CE7;
+      --accent: #00CEC9;
+      --danger: #FF7675;
+      --warning: #FDCB6E;
+      --text: #F8F9FA;
+      --text-muted: #A4B0BE;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .badge-status {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-connected {
+      background: rgba(0, 206, 201, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(0, 206, 201, 0.4);
+    }
+
+    .status-disconnected {
+      background: rgba(255, 118, 117, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 118, 117, 0.4);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      margin-bottom: 16px;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      justify-content: center;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Formulario de Entrada */
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: #141724;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .avatar-option {
+      font-size: 1.6rem;
+      background: #141724;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 8px 0;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .avatar-option.selected {
+      border-color: var(--accent);
+      background: rgba(0, 206, 201, 0.15);
+      transform: scale(1.08);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #8E44AD);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), #0984E3);
+      color: #0F111A;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #D63031);
+      color: #fff;
+    }
+
+    .mode-tabs {
+      display: flex;
+      background: #141724;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .mode-tab.active {
+      background: var(--card-bg);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Pantalla de Votación */
+    .vote-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .vote-btn {
+      background: #141724;
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .vote-btn:active, .vote-btn.selected {
+      border-color: var(--accent);
+      background: rgba(0, 206, 201, 0.2);
+      transform: scale(0.98);
+    }
+
+    /* Pantalla de Rol Secreto (Undercover) */
+    .secret-box {
+      border: 3px dashed var(--accent);
+      background: rgba(0, 206, 201, 0.05);
+      border-radius: 24px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      margin: 20px 0;
+      transition: all 0.2s;
+    }
+
+    .secret-box:active {
+      background: rgba(0, 206, 201, 0.2);
+      border-style: solid;
+      transform: scale(0.99);
+    }
+
+    .secret-revealed {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--warning);
+      letter-spacing: 1px;
+    }
+
+    /* Botones Gigantes Yo Sí / Yo Nunca */
+    .binary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      flex: 1;
+      margin-top: 16px;
+    }
+
+    .big-choice-btn {
+      border-radius: 24px;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .big-choice-btn:active {
+      transform: scale(0.95);
+    }
+
+    .choice-yes {
+      background: linear-gradient(180deg, #FF7675, #D63031);
+      box-shadow: 0 10px 25px rgba(214, 48, 49, 0.4);
+    }
+
+    .choice-no {
+      background: linear-gradient(180deg, #00B894, #00CEC9);
+      box-shadow: 0 10px 25px rgba(0, 184, 148, 0.4);
+    }
+
+    /* Pulso animado para espera */
+    .pulse-avatar {
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <span>⚡</span> OPEN SOCIAL
+      </div>
+      <div id="status-badge" class="badge-status status-disconnected">
+        <span id="status-dot">●</span> <span id="status-text">Sin conexión</span>
+      </div>
+    </header>
+
+    <!-- 1. PANTALLA DE CONEXIÓN / LOBBY -->
+    <div id="screen-login" class="screen active">
+      <div class="card">
+        <h2 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 6px;">Unirse a la Sala</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
+          Juega con tus amigos desde tu móvil sin instalar nada.
+        </p>
+
+        <!-- Selector de Modo: WiFi Local vs Online WebRTC -->
+        <div class="mode-tabs">
+          <div class="mode-tab active" id="tab-mode-local" onclick="setMode('local')">📶 Misma WiFi</div>
+          <div class="mode-tab" id="tab-mode-p2p" onclick="setMode('p2p')">🌐 Online (Código)</div>
+        </div>
+
+        <div class="input-group" id="group-room" style="display: none;">
+          <label for="room-code">Código de Sala (4 letras)</label>
+          <input type="text" id="room-code" placeholder="Ej: FEST" maxlength="6" style="text-transform: uppercase;">
+        </div>
+
+        <div class="input-group" id="group-host">
+          <label for="host-ip">Dirección del Host</label>
+          <input type="text" id="host-ip" placeholder="192.168.1.xxx:8080">
+        </div>
+
+        <div class="input-group">
+          <label for="player-name">Tu Nombre o Apodo</label>
+          <input type="text" id="player-name" placeholder="Tu nombre..." maxlength="15">
+        </div>
+
+        <div class="input-group">
+          <label>Elige tu Avatar</label>
+          <div class="avatar-grid" id="avatar-container">
+            <!-- Avatares dinámicos -->
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="connectToHost()">
+          ¡Entrar a la Fiesta! 🚀
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. PANTALLA DE ESPERA (LOBBY) -->
+    <div id="screen-waiting" class="screen">
+      <div class="card" style="text-align: center; padding: 40px 20px;">
+        <div id="wait-avatar" class="pulse-avatar" style="font-size: 4.5rem; margin-bottom: 12px;">🦊</div>
+        <h2 id="wait-player-name" style="font-size: 1.5rem; font-weight: 900; margin-bottom: 4px;">Jugador</h2>
+        <p style="color: var(--accent); font-weight: 700; font-size: 0.9rem; margin-bottom: 24px;">¡Conectado a la Sala!</p>
+
+        <div style="background: #141724; border-radius: 16px; padding: 18px; margin-bottom: 20px;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+            Mira la pantalla del <strong>Host</strong>. La ronda comenzará en cuanto el anfitrión pulse empezar.
+          </p>
+        </div>
+
+        <div id="player-count-badge" style="font-size: 0.8rem; color: var(--text-muted);">
+          Esperando a los demás jugadores...
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PANTALLA: VOTACIÓN SECRETA (¿Quién es más probable? / Impostor) -->
+    <div id="screen-vote" class="screen">
+      <div class="card">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 6px;">VOTACIÓN SECRETA</div>
+        <h3 id="vote-question" style="font-size: 1.25rem; font-weight: 800; line-height: 1.4; margin-bottom: 16px;">
+          ¿A quién votas?
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+          Nadie verá tu voto hasta que todos hayan votado:
+        </p>
+        <div class="vote-list" id="vote-options">
+          <!-- Opciones dinámicas de jugadores -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. PANTALLA: ROL SECRETO (Undercover / Impostor) -->
+    <div id="screen-secret" class="screen">
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--warning); letter-spacing: 1.5px; margin-bottom: 8px;">PALABRA SECRETA</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px;">Tu Rol en la Partida</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+          Asegúrate de que nadie mire tu pantalla. Mantén pulsado para revelar:
+        </p>
+
+        <div class="secret-box" id="secret-card" onmousedown="revealSecret(true)" onmouseup="revealSecret(false)" ontouchstart="revealSecret(true)" ontouchend="revealSecret(false)">
+          <div id="secret-hidden-state">
+            <span style="font-size: 3rem;">🔒</span>
+            <div style="font-weight: 800; margin-top: 8px; color: var(--accent);">MANTÉN PULSADO</div>
+          </div>
+          <div id="secret-revealed-state" style="display: none;">
+            <div id="secret-role" style="font-size: 0.9rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase;">CIVIL</div>
+            <div id="secret-word" class="secret-revealed">PLAYA 🏖️</div>
+          </div>
+        </div>
+
+        <p style="font-size: 0.75rem; color: var(--text-muted);">
+          Al soltar la pantalla, tu palabra se volverá a ocultar de inmediato.
+        </p>
+      </div>
+    </div>
+
+    <!-- 5. PANTALLA: YO NUNCA / BINARIO EN DIRECTO -->
+    <div id="screen-binary" class="screen">
+      <div class="card" style="text-align: center; margin-bottom: 12px;">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--danger); letter-spacing: 1.5px; margin-bottom: 6px;">RESPUESTA EN VIVO</div>
+        <h3 id="binary-prompt" style="font-size: 1.25rem; font-weight: 800; line-height: 1.4;">
+          ¿Lo has hecho alguna vez?
+        </h3>
+      </div>
+      <div class="binary-grid">
+        <button class="big-choice-btn choice-yes" onclick="submitBinaryChoice(true)">
+          <span style="font-size: 3rem;">🙋</span>
+          <span>¡YO SÍ!</span>
+          <span style="font-size: 0.8rem; opacity: 0.8;">(Bebo / Castigo)</span>
+        </button>
+        <button class="big-choice-btn choice-no" onclick="submitBinaryChoice(false)">
+          <span style="font-size: 3rem;">😇</span>
+          <span>YO NUNCA</span>
+          <span style="font-size: 0.8rem; opacity: 0.8;">(Me libro)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 6. PANTALLA: CASTIGO O ALERTA -->
+    <div id="screen-penalty" class="screen">
+      <div class="card" style="text-align: center; border: 2px solid var(--danger); background: rgba(255,118,117,0.1); padding: 36px 20px;">
+        <span style="font-size: 4rem;">🚨</span>
+        <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--danger); margin: 12px 0 6px;">¡TE TOCA CUMPLIR!</h2>
+        <p id="penalty-text" style="font-size: 1.2rem; font-weight: 700; line-height: 1.4; margin-bottom: 24px; color: #fff;">
+          ¡Has sido el más votado! Bebe 3 tragos o gira la ruleta.
+        </p>
+        <button class="btn btn-primary" onclick="setScreen('screen-waiting')">
+          ¡Cumplido! Continuar
+        </button>
+      </div>
+    </div>
+
+    <!-- 7. PANTALLA: FAKE IT LIVE (EL CAMALEÓN) -->
+    <div id="screen-fakeit" class="screen">
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 0.75rem; font-weight: 900; color: var(--warning); letter-spacing: 1.5px; margin-bottom: 8px;">FAKE IT • FÍNGELO</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px;">Tu Acción Secreta</h3>
+        
+        <div class="secret-box" id="fakeit-card" onmousedown="revealFakeIt(true)" onmouseup="revealFakeIt(false)" ontouchstart="revealFakeIt(true)" ontouchend="revealFakeIt(false)">
+          <div id="fakeit-hidden">
+            <span style="font-size: 3rem;">🎭</span>
+            <div style="font-weight: 800; margin-top: 8px; color: var(--accent);">MANTÉN PULSADO</div>
+          </div>
+          <div id="fakeit-revealed" style="display: none;">
+            <div id="fakeit-role-badge" style="font-size: 0.85rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase;">ACCIÓN</div>
+            <div id="fakeit-action-text" class="secret-revealed" style="font-size: 1.3rem; line-height: 1.4; margin-top: 8px;">
+              ¡Pon cara de sorpresa y aplaude!
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">
+          Mira la pantalla del Host para la cuenta atrás 3, 2, 1... ¡y actúa a la vez!
+        </p>
+      </div>
+    </div>
+
+    <!-- 8. PANTALLA: LA PATATA CALIENTE EN VIVO (HOT POTATO) -->
+    <div id="screen-hotpotato" class="screen">
+      <div class="card" id="potato-card" style="text-align: center; border: 2px solid var(--danger); background: rgba(255,118,117,0.15); padding: 24px 16px;">
+        <div id="potato-holding-view">
+          <span style="font-size: 4rem; display: inline-block; animation: pulse 0.5s infinite;">💣</span>
+          <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--danger); margin: 8px 0;">¡TIENES LA BOMBA!</h2>
+          <p id="potato-category" style="font-size: 1rem; font-weight: 800; color: #fff; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 12px; margin-bottom: 16px;">
+            Categoría: Marcas de coches
+          </p>
+          <p style="font-size: 0.85rem; color: var(--warning); font-weight: 700; margin-bottom: 12px;">
+            ¡Di una palabra en voz alta y pásala tocando un nombre!
+          </p>
+          <div class="vote-list" id="potato-pass-options">
+            <!-- Botones dinámicos para pasar la bomba -->
+          </div>
+        </div>
+
+        <div id="potato-waiting-view" style="display: none; padding: 20px 0;">
+          <span style="font-size: 3.5rem;">⏱️</span>
+          <h3 id="potato-holder-msg" style="font-size: 1.3rem; font-weight: 800; color: #fff; margin: 12px 0 6px;">
+            La bomba la tiene Marcos...
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            ¡Atento por si te la pasa a ti!
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuración y Estado del Cliente
+    const avatars = ['🦊', '🐯', '🐼', '🐸', '🚀', '🍺', '🍕', '👑', '🔥', '💎', '🥑', '🦄'];
+    let selectedAvatar = avatars[0];
+    let connectionMode = 'local'; // 'local' (WiFi) o 'p2p' (WebRTC)
+    let socket = null;
+    let peer = null;
+    let peerConn = null;
+    let currentSecretData = { role: 'CIVIL', word: 'PLAYA' };
+
+    // Inicialización al cargar la web
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAvatars();
+      parseUrlParameters();
+    });
+
+    function renderAvatars() {
+      const container = document.getElementById('avatar-container');
+      container.innerHTML = '';
+      avatars.forEach((emoji, index) => {
+        const div = document.createElement('div');
+        div.className = `avatar-option ${index === 0 ? 'selected' : ''}`;
+        div.innerText = emoji;
+        div.onclick = () => {
+          document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+          div.classList.add('selected');
+          selectedAvatar = emoji;
+        };
+        container.appendChild(div);
+      });
+    }
+
+    function setMode(mode) {
+      connectionMode = mode;
+      document.getElementById('tab-mode-local').classList.toggle('active', mode === 'local');
+      document.getElementById('tab-mode-p2p').classList.toggle('active', mode === 'p2p');
+      document.getElementById('group-host').style.display = mode === 'local' ? 'block' : 'none';
+      document.getElementById('group-room').style.display = mode === 'p2p' ? 'block' : 'none';
+    }
+
+    function parseUrlParameters() {
+      const params = new URLSearchParams(window.location.search);
+      // Si la URL viene con ?room=FEST activamos modo P2P directamente
+      if (params.get('room')) {
+        setMode('p2p');
+        document.getElementById('room-code').value = params.get('room').toUpperCase();
+      }
+      // Si viene con ?host=192.168.1.55:8080 o estamos cargados desde el servidor local
+      if (params.get('host')) {
+        setMode('local');
+        document.getElementById('host-ip').value = params.get('host');
+      } else if (window.location.host && !window.location.host.includes('github.io')) {
+        setMode('local');
+        document.getElementById('host-ip').value = window.location.host;
+      }
+      if (params.get('name')) {
+        document.getElementById('player-name').value = params.get('name');
+      }
+    }
+
+    function setScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const active = document.getElementById(screenId);
+      if (active) active.classList.add('active');
+    }
+
+    function updateStatus(connected, text) {
+      const badge = document.getElementById('status-badge');
+      const dot = document.getElementById('status-dot');
+      const label = document.getElementById('status-text');
+      if (connected) {
+        badge.className = 'badge-status status-connected';
+        dot.style.color = 'var(--accent)';
+        label.innerText = text || 'En línea';
+      } else {
+        badge.className = 'badge-status status-disconnected';
+        dot.style.color = 'var(--danger)';
+        label.innerText = text || 'Desconectado';
+      }
+    }
+
+    // ==========================================
+    // CONEXIÓN AL HOST (LOCAL O P2P)
+    // ==========================================
+    function connectToHost() {
+      const name = document.getElementById('player-name').value.trim();
+      if (!name) {
+        alert("Por favor introduce tu nombre.");
+        return;
+      }
+
+      if (navigator.vibrate) navigator.vibrate(50);
+      document.getElementById('wait-avatar').innerText = selectedAvatar;
+      document.getElementById('wait-player-name').innerText = `${selectedAvatar} ${name}`;
+
+      if (connectionMode === 'local') {
+        connectLocalWebSocket(name);
+      } else {
+        connectWebRTCPeer(name);
+      }
+    }
+
+    // Modo 1: WebSocket Local (Misma WiFi / Hotspot)
+    function connectLocalWebSocket(name) {
+      let host = document.getElementById('host-ip').value.trim();
+      if (!host) host = window.location.host || '192.168.1.1:8080';
+      const wsUrl = `ws://${host}/ws`;
+
+      updateStatus(false, 'Conectando...');
+
+      try {
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => {
+          updateStatus(true, 'Conectado (WiFi)');
+          sendData({
+            type: 'join',
+            name: name,
+            avatar: selectedAvatar
+          });
+          setScreen('screen-waiting');
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleHostMessage(data);
+          } catch (e) {
+            console.error("Mensaje inválido:", event.data);
+          }
+        };
+
+        socket.onclose = () => {
+          updateStatus(false, 'Desconectado');
+        };
+
+        socket.onerror = (err) => {
+          console.error("Error WebSocket:", err);
+          updateStatus(false, 'Error conexión');
+          alert("No se pudo conectar al host local. Revisa que estés en la misma WiFi.");
+        };
+      } catch (err) {
+        alert("Error de conexión: " + err.message);
+      }
+    }
+
+    // Modo 2: WebRTC P2P (PeerJS - Online por código de 4 letras)
+    function connectWebRTCPeer(name) {
+      const room = document.getElementById('room-code').value.trim().toUpperCase();
+      if (!room) {
+        alert("Introduce el código de sala de 4 letras.");
+        return;
+      }
+
+      updateStatus(false, 'Conectando P2P...');
+      const hostPeerId = `opensocial-room-${room}`;
+
+      // Crear cliente Peer sin ID fija
+      peer = new Peer();
+
+      peer.on('open', (id) => {
+        peerConn = peer.connect(hostPeerId, { reliable: true });
+
+        peerConn.on('open', () => {
+          updateStatus(true, `Sala: ${room}`);
+          sendData({
+            type: 'join',
+            name: name,
+            avatar: selectedAvatar
+          });
+          setScreen('screen-waiting');
+        });
+
+        peerConn.on('data', (data) => {
+          handleHostMessage(data);
+        });
+
+        peerConn.on('close', () => {
+          updateStatus(false, 'Sala cerrada');
+        });
+
+        peerConn.on('error', (err) => {
+          console.error("Error P2P Conn:", err);
+          updateStatus(false, 'Error sala');
+          alert("No se pudo conectar a la sala " + room + ". ¿Está el Host iniciado?");
+        });
+      });
+
+      peer.on('error', (err) => {
+        console.error("Error PeerJS:", err);
+        updateStatus(false, 'Error P2P');
+        alert("Error de conexión P2P: " + err.type);
+      });
+    }
+
+    // Enviar datos al host (unificado para WS y P2P)
+    function sendData(msg) {
+      if (connectionMode === 'local' && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(msg));
+      } else if (connectionMode === 'p2p' && peerConn && peerConn.open) {
+        peerConn.send(msg);
+      }
+    }
+
+    // ==========================================
+    // PROCESAMIENTO DE ACCIONES DEL HOST
+    // ==========================================
+    function handleHostMessage(msg) {
+      console.log("Mensaje del Host:", msg);
+      if (navigator.vibrate) navigator.vibrate(80);
+
+      switch (msg.type) {
+        case 'lobby_state':
+          // Actualizar estado del lobby
+          document.getElementById('player-count-badge').innerText = `Jugadores en sala: ${msg.playerCount || 1}`;
+          break;
+
+        case 'start_vote':
+          // Abrir votación secreta
+          document.getElementById('vote-question').innerText = msg.question || '¿A quién votas?';
+          const container = document.getElementById('vote-options');
+          container.innerHTML = '';
+          (msg.options || []).forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'vote-btn';
+            btn.innerHTML = `<span>${opt.avatar || '👤'} ${opt.name}</span> <span>➔</span>`;
+            btn.onclick = () => {
+              document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+              btn.classList.add('selected');
+              if (navigator.vibrate) navigator.vibrate(50);
+              sendData({ type: 'vote_submitted', target: opt.name });
+              setTimeout(() => {
+                setScreen('screen-waiting');
+              }, 400);
+            };
+            container.appendChild(btn);
+          });
+          setScreen('screen-vote');
+          break;
+
+        case 'secret_role':
+          // Recibir palabra secreta (Undercover)
+          currentSecretData = {
+            role: msg.role || 'CIVIL',
+            word: msg.word || 'DESCONOCIDO'
+          };
+          document.getElementById('secret-role').innerText = currentSecretData.role;
+          document.getElementById('secret-word').innerText = currentSecretData.word;
+          setScreen('screen-secret');
+          break;
+
+        case 'start_binary':
+          // Recibir pregunta de Yo Sí / Yo Nunca o Qué Prefieres
+          document.getElementById('binary-prompt').innerText = msg.text || '¿Lo has hecho alguna vez?';
+          setScreen('screen-binary');
+          break;
+
+        case 'penalty_alert':
+          // Alerta de castigo directo al jugador
+          document.getElementById('penalty-text').innerText = msg.reason || '¡Te toca cumplir castigo!';
+          setScreen('screen-penalty');
+          break;
+
+        case 'fake_it_prompt':
+          const badge = document.getElementById('fakeit-role-badge');
+          const txt = document.getElementById('fakeit-action-text');
+          if (msg.isImpostor) {
+            badge.innerText = "🤫 ¡ERES EL IMPOSTOR!";
+            badge.style.color = "var(--danger)";
+            txt.innerText = "¡No sabes la acción! Mira por el rabillo del ojo a los demás e imítales al segundo sin que te pillen.";
+            txt.style.color = "var(--warning)";
+          } else {
+            badge.innerText = "😇 ACCIÓN SECRETA";
+            badge.style.color = "var(--accent)";
+            txt.innerText = msg.action;
+            txt.style.color = "#fff";
+          }
+          setScreen('screen-fakeit');
+          break;
+
+        case 'bomb_holding':
+          if (msg.isHolding) {
+            document.getElementById('potato-holding-view').style.display = 'block';
+            document.getElementById('potato-waiting-view').style.display = 'none';
+            document.getElementById('potato-category').innerText = "Categoría: " + (msg.category || 'Palabras rápidas');
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+            
+            const passContainer = document.getElementById('potato-pass-options');
+            passContainer.innerHTML = '';
+            (msg.others || []).forEach(otherName => {
+              const b = document.createElement('div');
+              b.className = 'vote-btn';
+              b.style.borderColor = 'var(--danger)';
+              b.innerHTML = `<span>💣 Pasar a <strong>${otherName}</strong></span> <span>➔</span>`;
+              b.onclick = () => {
+                if (navigator.vibrate) navigator.vibrate(80);
+                sendData({ type: 'pass_bomb', to: otherName });
+                document.getElementById('potato-holding-view').style.display = 'none';
+                document.getElementById('potato-waiting-view').style.display = 'block';
+                document.getElementById('potato-holder-msg').innerText = `Bomba pasada a ${otherName}...`;
+              };
+              passContainer.appendChild(b);
+            });
+          } else {
+            document.getElementById('potato-holding-view').style.display = 'none';
+            document.getElementById('potato-waiting-view').style.display = 'block';
+            document.getElementById('potato-holder-msg').innerText = `La bomba la tiene ${msg.holderName || 'otro jugador'}...`;
+          }
+          setScreen('screen-hotpotato');
+          break;
+
+        case 'reset_to_lobby':
+          setScreen('screen-waiting');
+          break;
+      }
+    }
+
+    function submitBinaryChoice(choice) {
+      if (navigator.vibrate) navigator.vibrate(50);
+      sendData({ type: 'binary_submitted', value: choice });
+      setScreen('screen-waiting');
+    }
+
+    function revealSecret(show) {
+      const hidden = document.getElementById('secret-hidden-state');
+      const revealed = document.getElementById('secret-revealed-state');
+      if (show) {
+        hidden.style.display = 'none';
+        revealed.style.display = 'block';
+        if (navigator.vibrate) navigator.vibrate(30);
+      } else {
+        hidden.style.display = 'block';
+        revealed.style.display = 'none';
+      }
+    }
+
+    function revealFakeIt(show) {
+      const hidden = document.getElementById('fakeit-hidden');
+      const revealed = document.getElementById('fakeit-revealed');
+      if (show) {
+        hidden.style.display = 'none';
+        revealed.style.display = 'block';
+        if (navigator.vibrate) navigator.vibrate(30);
+      } else {
+        hidden.style.display = 'block';
+        revealed.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -6,7 +6,7 @@
   "games": [
     {
       "id": "picolo_mode",
-      "name": "Modo Picolo (Maldiciones)",
+      "name": "Maldiciones & Duelos (Virus Party)",
       "icon": "auto_awesome",
       "description": "Virus que duran turnos, duelos 1 vs 1, votaciones y reglas globales.",
       "packs": [
