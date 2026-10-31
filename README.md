@@ -29,6 +29,18 @@ A diferencia de las apps comerciales que cobran suscripciones abusivas por desbl
 
 ---
 
+## 📸 Capturas de Pantalla
+
+<div align="center">
+  <img src="docs/screenshots/screenshot_votacion.jpg" width="31%" alt="Votación Secreta" />
+  &nbsp;
+  <img src="docs/screenshots/screenshot_yonunca.jpg" width="31%" alt="Yo Nunca Live" />
+  &nbsp;
+  <img src="docs/screenshots/screenshot_maldicion.jpg" width="31%" alt="Virus y Maldiciones" />
+</div>
+
+---
+
 ## 🎮 Catálogo de Juegos Incluidos
 
 | Juego | Mecánica | Modo de Juego |
