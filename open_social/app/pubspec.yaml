@@ -1,0 +1,30 @@
+name: open_social
+description: "Plataforma abierta de party games inspirada en Social Gamebox."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/content/
+    - assets/content/index.json
+    - assets/content/es/most_likely_to/classic.json
+    - assets/content/es/never_have_i_ever/classic.json
+    - assets/content/es/truth_or_dare/classic.json
+    - assets/content/es/fake_it/classic.json
+    - assets/content/es/wrong_answers_only/classic.json
+    - assets/content/es/charades/movies.json

@@ -1,0 +1,120 @@
+{
+  "name": "open_social_content",
+  "version": "1.0.0",
+  "description": "Repositorio oficial de contenidos y packs para Open Social",
+  "languages": ["es", "en"],
+  "games": [
+    {
+      "id": "most_likely_to",
+      "name": "¿Quién es más probable?",
+      "icon": "people",
+      "description": "Señalen todos a la vez a quien encaje mejor con la afirmación.",
+      "packs": [
+        {
+          "id": "most_likely_classic_es",
+          "name": "Clásico Fiesta",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/most_likely_to/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "never_have_i_ever",
+      "name": "Yo Nunca",
+      "icon": "local_bar",
+      "description": "Si lo has hecho alguna vez, bebes o pierdes una vida.",
+      "packs": [
+        {
+          "id": "never_classic_es",
+          "name": "Clásico",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/never_have_i_ever/classic.json"
+        },
+        {
+          "id": "never_party_es",
+          "name": "Fiesta & Locuras",
+          "language": "es",
+          "rating": "18+",
+          "version": 1,
+          "file": "es/never_have_i_ever/party.json"
+        }
+      ]
+    },
+    {
+      "id": "truth_or_dare",
+      "name": "Verdad o Reto",
+      "icon": "flash_on",
+      "description": "Elige la verdad sincera o atrévete con el desafío.",
+      "packs": [
+        {
+          "id": "truth_dare_classic_es",
+          "name": "Clásico Fiesta",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/truth_or_dare/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "fake_it",
+      "name": "Fake It (Fíngelo)",
+      "icon": "theater_comedy",
+      "description": "Todos reciben una acción secreta salvo el impostor, que debe fingir.",
+      "packs": [
+        {
+          "id": "fake_it_classic_es",
+          "name": "Gestos y Acciones",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/fake_it/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "wrong_answers_only",
+      "name": "Solo Respuestas Incorrectas",
+      "icon": "cancel",
+      "description": "Responde rápido mentiras obvias. Si dices la verdad, ¡pierdes!",
+      "packs": [
+        {
+          "id": "wrong_answers_classic_es",
+          "name": "Preguntas Rápidas",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/wrong_answers_only/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "charades",
+      "name": "Charadas en la Frente",
+      "icon": "face",
+      "description": "Coloca el móvil en la frente e inclínalo para acertar o pasar.",
+      "packs": [
+        {
+          "id": "charades_movies_es",
+          "name": "Cine y Series",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/charades/movies.json"
+        },
+        {
+          "id": "charades_celebrities_es",
+          "name": "Famosos y Personajes",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/charades/celebrities.json"
+        }
+      ]
+    }
+  ]
+}

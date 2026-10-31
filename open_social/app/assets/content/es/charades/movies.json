@@ -1,0 +1,21 @@
+{
+  "id": "charades_movies_es",
+  "game": "charades",
+  "name": "Cine y Series",
+  "language": "es",
+  "rating": "all-ages",
+  "words": [
+    "Titanic",
+    "El Rey León",
+    "Harry Potter",
+    "Star Wars",
+    "Jurassic Park",
+    "Spider-Man",
+    "Shrek",
+    "Stranger Things",
+    "El Padrino",
+    "Matrix",
+    "Los Vengadores",
+    "Piratas del Caribe"
+  ]
+}

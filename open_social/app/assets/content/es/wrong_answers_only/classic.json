@@ -1,0 +1,17 @@
+{
+  "id": "wrong_answers_classic_es",
+  "game": "wrong_answers_only",
+  "name": "Preguntas Rápidas",
+  "language": "es",
+  "rating": "all-ages",
+  "questions": [
+    { "q": "¿De qué color es el cielo durante el día?", "trap": "Azul" },
+    { "q": "¿Cuántas patas tiene un perro normal?", "trap": "Cuatro" },
+    { "q": "¿Qué instrumento se usa para cortar papel?", "trap": "Tijeras" },
+    { "q": "¿En qué país se encuentra la Torre Eiffel?", "trap": "Francia / París" },
+    { "q": "¿Qué líquido cae del cielo cuando llueve?", "trap": "Agua" },
+    { "q": "¿Qué animal maúlla?", "trap": "Gato" },
+    { "q": "¿Cuántos días tiene una semana?", "trap": "Siete" },
+    { "q": "¿Qué astro calienta la Tierra por el día?", "trap": "El Sol" }
+  ]
+}

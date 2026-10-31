@@ -1,0 +1,16 @@
+{
+  "id": "never_classic_es",
+  "game": "never_have_i_ever",
+  "name": "Clásico",
+  "language": "es",
+  "rating": "teen",
+  "items": [
+    "Yo nunca he fingido estar hablando por teléfono para evitar a alguien.",
+    "Yo nunca he comido algo que se cayó al suelo aplicando la regla de los 5 segundos.",
+    "Yo nunca he buscado en Google mi propio nombre para ver qué salía.",
+    "Yo nunca he fingido reírme de un chiste que en realidad no entendí.",
+    "Yo nunca he dejado un mensaje en 'visto' durante días y luego dije que no lo vi.",
+    "Yo nunca he culpado a una mascota de un olor o ruido que causé yo.",
+    "Yo nunca me he quedado viendo una serie completa en un solo día sin salir de la cama."
+  ]
+}

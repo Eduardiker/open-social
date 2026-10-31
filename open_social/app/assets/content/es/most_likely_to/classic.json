@@ -1,0 +1,19 @@
+{
+  "id": "most_likely_classic_es",
+  "game": "most_likely_to",
+  "name": "Clásico Fiesta",
+  "language": "es",
+  "rating": "teen",
+  "items": [
+    "¿Quién es más probable que termine detenido por un malentendido absurdo?",
+    "¿Quién es más probable que sobreviva a un apocalipsis zombi?",
+    "¿Quién es más probable que olvide el cumpleaños de su mejor amigo/a?",
+    "¿Quién es más probable que se vuelva famoso en internet por accidente?",
+    "¿Quién es más probable que gaste todo su dinero en algo totalmente inútil?",
+    "¿Quién es más probable que se quede dormido en una fiesta o evento formal?",
+    "¿Quién es más probable que envíe un mensaje al grupo equivocado y desate el caos?",
+    "¿Quién es más probable que llore viendo una película de dibujos animados?",
+    "¿Quién es más probable que pierda las llaves dentro de su propia casa?",
+    "¿Quién es más probable que empiece una secta sin darse cuenta?"
+  ]
+}

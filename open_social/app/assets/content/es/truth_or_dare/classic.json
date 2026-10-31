@@ -1,0 +1,21 @@
+{
+  "id": "truth_dare_classic_es",
+  "game": "truth_or_dare",
+  "name": "Clásico Fiesta",
+  "language": "es",
+  "rating": "teen",
+  "truths": [
+    "¿Cuál ha sido la situación más vergonzosa que has vivido en una cita?",
+    "¿Qué es lo más raro o absurdo que has buscado en tu historial de internet esta semana?",
+    "Si tuvieras que intercambiar de vida con alguien de esta habitación, ¿con quién sería y por qué?",
+    "¿Cuál es una mentira que le dijiste a tus padres y que todavía se creen?",
+    "¿Cuál ha sido tu peor compra impulsiva?"
+  ],
+  "dares": [
+    "Imita a un concursante de reality show dramático durante los próximos 2 minutos.",
+    "Llama o envía un audio a un contacto al azar diciendo únicamente: 'Sé lo que hiciste'.",
+    "Haz 10 sentadillas mientras cantas la canción de una serie infantil con voz de ópera.",
+    "Deja que la persona a tu derecha te dibuje un bigote con un bolígrafo lavable.",
+    "Habla con acento extranjero hasta que vuelva a ser tu turno."
+  ]
+}
