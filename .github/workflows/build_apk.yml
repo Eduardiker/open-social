@@ -31,19 +31,20 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: 📦 Instalar dependencias
+      - name: 🛠️ Generar entorno oficial Android y dependencias
         run: |
           cd open_social/app
+          flutter create --platforms=android --org com.opensocial .
           flutter pub get
 
       - name: 🚀 Compilar APK Release
         run: |
           cd open_social/app
-          flutter build apk --release
+          flutter build apk --release --no-tree-shake-icons
 
       - name: 📤 Subir APK para descargar
         uses: actions/upload-artifact@v4
         with:
           name: open-social-release-apk
-          path: open_social/app/build/app/outputs/flutter-apk/app-release.apk
+          path: open_social/app/build/app/outputs/flutter-apk/*.apk
           retention-days: 30
