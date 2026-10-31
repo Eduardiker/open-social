@@ -1,0 +1,49 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Open Social APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: ☕ Configurar Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 🐦 Configurar Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Instalar dependencias
+        run: |
+          cd open_social/app
+          flutter pub get
+
+      - name: 🚀 Compilar APK Release
+        run: |
+          cd open_social/app
+          flutter build apk --release
+
+      - name: 📤 Subir APK para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-social-release-apk
+          path: open_social/app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
