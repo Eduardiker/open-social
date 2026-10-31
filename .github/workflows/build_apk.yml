@@ -31,10 +31,12 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: 🛠️ Generar entorno oficial Android y dependencias
+      - name: 🛠️ Regenerar plataforma Android oficial limpia
         run: |
           cd open_social/app
+          rm -rf android
           flutter create --platforms=android --org com.opensocial .
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' android/app/src/main/AndroidManifest.xml
           flutter pub get
 
       - name: 🚀 Compilar APK Release
