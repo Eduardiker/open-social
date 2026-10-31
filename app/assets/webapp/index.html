@@ -412,6 +412,27 @@
       </div>
     </div>
 
+        <!-- PANTALLA: RESULTADOS DE RONDA (Votaciones / Yo Nunca) -->
+    <div id="screen-results" class="screen">
+      <div class="card" style="text-align: center; padding: 36px 20px;">
+        <span id="results-icon" style="font-size: 4rem;">🏆</span>
+        <div id="results-badge" style="font-size: 0.75rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; margin-top: 10px; text-transform: uppercase;">RESULTADOS DE LA RONDA</div>
+        <h2 id="results-title" style="font-size: 1.5rem; font-weight: 900; margin: 12px 0 8px; color: #fff;">¡Sentencia!</h2>
+        <div id="results-box" style="background: rgba(108, 92, 231, 0.15); border: 1px solid var(--primary); border-radius: 16px; padding: 18px; margin: 16px 0;">
+          <p id="results-winner" style="font-size: 1.25rem; font-weight: 800; color: var(--warning); line-height: 1.4;">Pep ha sido el más votado</p>
+          <p id="results-sub" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;">¡A cumplir el castigo!</p>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          Esperando que el Host inicie la siguiente pregunta...
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown Overlay para Fake It -->
+    <div id="fakeit-countdown-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.88); z-index: 999; flex-direction: column; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 900; color: var(--accent); text-align: center; padding: 20px;">
+      3
+    </div>
+
     <!-- 3. PANTALLA: VOTACIÓN SECRETA (¿Quién es más probable? / Impostor) -->
     <div id="screen-vote" class="screen">
       <div class="card">
@@ -760,6 +781,43 @@
       if (navigator.vibrate) navigator.vibrate(80);
 
       switch (msg.type) {
+        case 'vote_results':
+          document.getElementById('results-icon').innerText = '🏆';
+          document.getElementById('results-badge').innerText = 'SENTENCIA DEL GRUPO';
+          document.getElementById('results-title').innerText = msg.winner ? `¡${msg.winner} ha perdido!` : '¡Votación Finalizada!';
+          document.getElementById('results-winner').innerText = msg.winner ? `Más votado con ${msg.votes || 0} votos` : 'Empate';
+          document.getElementById('results-sub').innerText = '¡Te toca cumplir el castigo o beber!';
+          setScreen('screen-results');
+          break;
+
+        case 'binary_results':
+          document.getElementById('results-icon').innerText = '🍻';
+          document.getElementById('results-badge').innerText = 'RESULTADO YO NUNCA';
+          document.getElementById('results-title').innerText = '¡Confesiones Reveladas!';
+          if (msg.guilty && msg.guilty.length > 0) {
+            document.getElementById('results-winner').innerText = 'Culpables que beben: ' + msg.guilty.join(', ');
+            document.getElementById('results-sub').innerText = '¡Salud! A todos los culpables les toca trago.';
+          } else {
+            document.getElementById('results-winner').innerText = '😇 ¡Nadie lo ha hecho!';
+            document.getElementById('results-sub').innerText = '¡El que propuso la pregunta bebe solo!';
+          }
+          setScreen('screen-results');
+          break;
+
+        case 'fakeit_countdown':
+          const overlay = document.getElementById('fakeit-countdown-overlay');
+          if (overlay) {
+            overlay.style.display = 'flex';
+            overlay.innerText = msg.count;
+            if (navigator.vibrate) navigator.vibrate(80);
+            if (msg.count === '¡ACTUAD!' || msg.count === '¡YA!') {
+              overlay.style.color = 'var(--danger)';
+              setTimeout(() => { overlay.style.display = 'none'; }, 2000);
+            } else {
+              overlay.style.color = 'var(--accent)';
+            }
+          }
+          break;
         case 'lobby_state':
           // Actualizar estado del lobby
           document.getElementById('player-count-badge').innerText = `Jugadores en sala: ${msg.playerCount || 1}`;

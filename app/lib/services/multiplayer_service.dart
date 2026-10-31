@@ -63,19 +63,21 @@ class MultiplayerHostService {
   bool get hasHostPlayer => _players.any((p) => p.id == 'host');
 
   // Acciones emitidas directamente por el Host en la pantalla principal
-  void submitHostVote(String target) {
+  void submitHostVote(String target, {String voterName = 'Host (Tú)'}) {
     _eventsController.add({
       'type': 'vote_received',
       'voterId': 'host',
+      'voterName': voterName,
       'target': target,
     });
   }
 
-  void submitHostBinary(String value) {
+  void submitHostBinary(String value, {String voterName = 'Host (Tú)'}) {
     _eventsController.add({
       'type': 'binary_received',
       'voterId': 'host',
-      'value': value == 'YES',
+      'voterName': voterName,
+      'value': value == 'YES' || value == 'true',
     });
   }
 
@@ -182,12 +184,14 @@ class MultiplayerHostService {
           _eventsController.add({
             'type': 'vote_received',
             'voterId': playerId,
+            'voterName': name,
             'target': data['target'],
           });
         } else if (type == 'binary_submitted') {
           _eventsController.add({
             'type': 'binary_received',
             'voterId': playerId,
+            'voterName': name,
             'value': data['value'],
           });
         } else if (type == 'pass_bomb') {
@@ -240,6 +244,33 @@ class MultiplayerHostService {
       'type': 'lobby_state',
       'playerCount': _players.length,
       'players': _players.map((p) => p.toJson()).toList(),
+    });
+  }
+
+  void broadcastVoteResults({required String winnerName, required int votes, required Map<String, int> counts, required String question}) {
+    broadcast({
+      'type': 'vote_results',
+      'winner': winnerName,
+      'votes': votes,
+      'counts': counts,
+      'question': question,
+    });
+  }
+
+  void broadcastBinaryResults({required List<String> guilty, required int yesCount, required int noCount, required String prompt}) {
+    broadcast({
+      'type': 'binary_results',
+      'guilty': guilty,
+      'yesCount': yesCount,
+      'noCount': noCount,
+      'prompt': prompt,
+    });
+  }
+
+  void broadcastCountdown(dynamic value) {
+    broadcast({
+      'type': 'fakeit_countdown',
+      'count': value,
     });
   }
 

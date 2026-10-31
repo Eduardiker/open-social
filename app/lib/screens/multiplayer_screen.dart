@@ -26,7 +26,17 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   String hostPlayerAvatar = "👑";
   bool hostParticipates = true;
   bool isHostRoleRevealed = false;
+  bool isImpostorRevealed = false;
+  bool isVoteFinalized = false;
+  Timer? _autoFinalizeTimer;
+  int _autoFinalizeCountdown = 5;
+  int fakeItCountdownVal = 3;
+  bool isFakeItCounting = false;
+  Timer? _fakeItTimer;
   Map<String, Map<String, String>> currentUndercoverRoles = {};
+  String currentUndercoverCivilWord = '';
+  String currentUndercoverImpostorWord = '';
+  String currentFakeItAction = '';
 
   // Estado del minijuego activo
   String activeGame = 'lobby'; // 'lobby', 'vote', 'undercover', 'binary', 'fakeit', 'hotpotato'
@@ -86,34 +96,57 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     if (hostParticipates) {
       _hostService.addHostPlayer(name: hostPlayerName, avatar: hostPlayerAvatar);
     }
+    connectedPlayers = List.from(_hostService.players);
 
     _playerSub = _hostService.playersStream.listen((players) {
-      setState(() {
-        connectedPlayers = players;
-      });
+      if (mounted) {
+        setState(() {
+          connectedPlayers = players;
+        });
+      }
     });
 
     _eventSub = _hostService.eventsStream.listen((event) {
       final type = event['type'];
       if (type == 'vote_received') {
-        final voter = connectedPlayers.firstWhere((p) => p.id == event['voterId'], orElse: () => connectedPlayers.first);
-        setState(() {
-          currentVotes[voter.name] = event['target'];
-        });
+        final voterId = event['voterId'];
+        final voterName = (voterId == 'host')
+            ? hostPlayerName
+            : (event['voterName'] ??
+                (connectedPlayers.where((p) => p.id == voterId).isNotEmpty
+                    ? connectedPlayers.firstWhere((p) => p.id == voterId).name
+                    : 'Jugador'));
+        if (mounted) {
+          setState(() {
+            currentVotes[voterName] = event['target'];
+          });
+        }
+        _checkAutoFinalizeVote();
       } else if (type == 'binary_received') {
-        final voter = connectedPlayers.firstWhere((p) => p.id == event['voterId'], orElse: () => connectedPlayers.first);
-        setState(() {
-          currentBinary[voter.name] = (event['value'] == true || event['value'] == 'YES');
-        });
+        final voterId = event['voterId'];
+        final voterName = (voterId == 'host')
+            ? hostPlayerName
+            : (event['voterName'] ??
+                (connectedPlayers.where((p) => p.id == voterId).isNotEmpty
+                    ? connectedPlayers.firstWhere((p) => p.id == voterId).name
+                    : 'Jugador'));
+        if (mounted) {
+          setState(() {
+            currentBinary[voterName] = (event['value'] == true || event['value'] == 'YES');
+          });
+        }
+        _checkAutoFinalizeBinary();
       } else if (type == 'bomb_passed') {
-        setState(() {
-          currentBombHolder = event['to'];
-        });
+        if (mounted) {
+          setState(() {
+            currentBombHolder = event['to'];
+          });
+        }
         _hostService.updateHotPotato(currentQuestion, currentBombHolder!);
       }
     });
 
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   String _generateRoomCode() {
@@ -124,6 +157,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
   @override
   void dispose() {
+    _autoFinalizeTimer?.cancel();
+    _fakeItTimer?.cancel();
     _bombTimer?.cancel();
     _playerSub?.cancel();
     _eventSub?.cancel();
@@ -200,36 +235,170 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     "Animales salvajes peligrosos",
   ];
 
+  void _checkAutoFinalizeVote() {
+    if (isVoteFinalized) return;
+    if (connectedPlayers.isNotEmpty && currentVotes.length >= connectedPlayers.length) {
+      if (_autoFinalizeTimer == null) {
+        _autoFinalizeCountdown = 5;
+        _autoFinalizeTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+          if (!mounted) {
+            t.cancel();
+            return;
+          }
+          setState(() {
+            _autoFinalizeCountdown--;
+            if (_autoFinalizeCountdown <= 0) {
+              t.cancel();
+              _autoFinalizeTimer = null;
+              _finalizeVote();
+            }
+          });
+        });
+      }
+    }
+  }
+
+  void _finalizeVote() {
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+
+    final votesCount = <String, int>{};
+    for (var target in currentVotes.values) {
+      votesCount[target] = (votesCount[target] ?? 0) + 1;
+    }
+
+    String maxVoted = "Nadie";
+    int maxCount = 0;
+    votesCount.forEach((k, v) {
+      if (v > maxCount) {
+        maxCount = v;
+        maxVoted = k;
+      }
+    });
+
+    _hostService.broadcastVoteResults(
+      winnerName: maxVoted,
+      votes: maxCount,
+      counts: votesCount,
+      question: currentQuestion,
+    );
+
+    setState(() {
+      isVoteFinalized = true;
+    });
+  }
+
+  void _checkAutoFinalizeBinary() {
+    if (isVoteFinalized) return;
+    if (connectedPlayers.isNotEmpty && currentBinary.length >= connectedPlayers.length) {
+      if (_autoFinalizeTimer == null) {
+        _autoFinalizeCountdown = 5;
+        _autoFinalizeTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+          if (!mounted) {
+            t.cancel();
+            return;
+          }
+          setState(() {
+            _autoFinalizeCountdown--;
+            if (_autoFinalizeCountdown <= 0) {
+              t.cancel();
+              _autoFinalizeTimer = null;
+              _finalizeBinary();
+            }
+          });
+        });
+      }
+    }
+  }
+
+  void _finalizeBinary() {
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+
+    final guilty = currentBinary.entries.where((e) => e.value).map((e) => e.key).toList();
+    int yesCount = currentBinary.values.where((v) => v).length;
+    int noCount = currentBinary.values.where((v) => !v).length;
+
+    _hostService.broadcastBinaryResults(
+      guilty: guilty,
+      yesCount: yesCount,
+      noCount: noCount,
+      prompt: currentQuestion,
+    );
+
+    setState(() {
+      isVoteFinalized = true;
+    });
+  }
+
+  void _startFakeItCountdown() {
+    if (isFakeItCounting) return;
+    setState(() {
+      isFakeItCounting = true;
+      fakeItCountdownVal = 3;
+    });
+
+    _hostService.broadcastCountdown(3);
+
+    _fakeItTimer?.cancel();
+    _fakeItTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        fakeItCountdownVal--;
+        if (fakeItCountdownVal > 0) {
+          _hostService.broadcastCountdown(fakeItCountdownVal);
+        } else if (fakeItCountdownVal == 0) {
+          _hostService.broadcastCountdown("¡ACTUAD!");
+        } else {
+          t.cancel();
+          _fakeItTimer = null;
+          isFakeItCounting = false;
+        }
+      });
+    });
+  }
+
   // Iniciar Votación Secreta
   void _startSecretVote() {
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+    isVoteFinalized = false;
+    currentVotes.clear();
+
     if (connectedPlayers.length < 2) {
       _showWarning("Se necesitan al menos 2 jugadores conectados.");
       return;
     }
 
     final q = secretVoteQuestions[Random().nextInt(secretVoteQuestions.length)];
-
-    currentVotes.clear();
     final options = connectedPlayers.map((p) => {'name': p.name, 'avatar': p.avatar}).toList();
     _hostService.startSecretVoting(q, options);
 
     setState(() {
       activeGame = 'vote';
       currentQuestion = q;
+      isVoteFinalized = false;
     });
   }
 
   // Iniciar Partida de El Impostor (Undercover)
   void _startUndercover() {
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+
     if (connectedPlayers.length < 3) {
       _showWarning("El Impostor requiere al menos 3 jugadores.");
       return;
     }
 
     final pair = undercoverPairs[Random().nextInt(undercoverPairs.length)];
-    final rand = Random();
-    final impostorIndex = rand.nextInt(connectedPlayers.length);
+    final impostorIndex = Random().nextInt(connectedPlayers.length);
     impostorPlayer = connectedPlayers[impostorIndex].name;
+    currentUndercoverCivilWord = pair['civil']!;
+    currentUndercoverImpostorWord = pair['impostor']!;
 
     final roles = <String, Map<String, String>>{};
     for (int i = 0; i < connectedPlayers.length; i++) {
@@ -243,28 +412,41 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
     currentUndercoverRoles = roles;
     isHostRoleRevealed = false;
+    isImpostorRevealed = false;
     _hostService.distributeUndercoverRoles(roles);
 
     setState(() {
       activeGame = 'undercover';
       currentQuestion = "Ronda de Pistas: Cada jugador dice 1 palabra sobre su secreto. ¡Atrapad al Impostor!";
+      isHostRoleRevealed = false;
+      isImpostorRevealed = false;
     });
   }
 
   // Iniciar Yo Nunca Colectivo
   void _startBinaryGame() {
-    final p = yoNuncaPrompts[Random().nextInt(yoNuncaPrompts.length)];
-
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+    isVoteFinalized = false;
     currentBinary.clear();
+
+    final p = yoNuncaPrompts[Random().nextInt(yoNuncaPrompts.length)];
     _hostService.startBinaryPrompt(p);
 
     setState(() {
       activeGame = 'binary';
       currentQuestion = p;
+      isVoteFinalized = false;
     });
   }
 
   void _startFakeItLive() {
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+    _fakeItTimer?.cancel();
+    _fakeItTimer = null;
+    isFakeItCounting = false;
+
     if (connectedPlayers.length < 3) {
       _showWarning("Fake It requiere al menos 3 jugadores.");
       return;
@@ -273,13 +455,18 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     final act = fakeItActions[Random().nextInt(fakeItActions.length)];
     final imp = connectedPlayers[Random().nextInt(connectedPlayers.length)].name;
     impostorPlayer = imp;
+    currentFakeItAction = act;
     isHostRoleRevealed = false;
+    isImpostorRevealed = false;
 
     _hostService.startFakeItRound(act, imp);
 
     setState(() {
       activeGame = 'fakeit';
-      currentQuestion = "Cuenta atrás: 3, 2, 1... ¡ACTUAD A LA VEZ! Atrapad al Camaleón.";
+      currentQuestion = "Pulsa 'Iniciar Cuenta Atrás 3, 2, 1' y actuad a la vez. ¡Atrapad al Camaleón!";
+      isHostRoleRevealed = false;
+      isImpostorRevealed = false;
+      isFakeItCounting = false;
     });
   }
 
@@ -820,11 +1007,11 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (allVoted && maxVotedName != null) ...[
+        if (isVoteFinalized && maxVotedName != null) ...[
           Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Color(0xFF6C5CE7), Color(0xFFFD79A8)]),
               borderRadius: BorderRadius.circular(14),
@@ -832,12 +1019,39 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             ),
             child: Row(
               children: [
-                const Text("🏆", style: TextStyle(fontSize: 22)),
-                const SizedBox(width: 10),
+                const Text("🏆", style: TextStyle(fontSize: 26)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     "¡SENTENCIA! $maxVotedName ha sido el más votado ($maxVotedCount votos). ¡Paga castigo!",
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (_autoFinalizeTimer != null) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00CEC9).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF00CEC9)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Color(0xFF00CEC9))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "⏳ ¡Todos han votado! Revelando automáticamente en $_autoFinalizeCountdown s...",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF00CEC9)),
                   ),
                 ),
               ],
@@ -848,18 +1062,22 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              allVoted ? "✅ ¡TODOS HAN VOTADO!" : "Votos recibidos: $totalVotes de $totalPlayers",
+              isVoteFinalized
+                  ? "🏁 VOTACIÓN FINALIZADA"
+                  : allVoted
+                      ? "✅ ¡TODOS HAN VOTADO!"
+                      : "Votos recibidos: $totalVotes de $totalPlayers",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: allVoted ? const Color(0xFF00CEC9) : Colors.white70,
+                color: isVoteFinalized || allVoted ? const Color(0xFF00CEC9) : Colors.white70,
               ),
             ),
-            if (pending > 0)
+            if (!isVoteFinalized && pending > 0)
               Text("Faltan $pending...", style: const TextStyle(fontSize: 12, color: Colors.white54)),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Expanded(
           child: ListView(
             children: connectedPlayers.map((p) {
@@ -893,11 +1111,36 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             }).toList(),
           ),
         ),
+        if (!isVoteFinalized) ...[
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C5CE7),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.stop_circle_outlined, size: 20, color: Colors.white),
+              label: Text(
+                _autoFinalizeTimer != null
+                    ? "Revelar Resultados Ahora (o esperar $_autoFinalizeCountdown s) ⏹️"
+                    : "Finalizar Votación y Revelar Resultados ⏹️",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+              ),
+              onPressed: _finalizeVote,
+            ),
+          ),
+        ],
         if (hostParticipates) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFF1E2130), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF6C5CE7))),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2130),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF6C5CE7)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -905,7 +1148,10 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("👑 Tu Voto Secreto (Host):", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFDCB6E))),
-                    Text(currentVotes[hostPlayerName] != null ? "✅ Votado: ${currentVotes[hostPlayerName]}" : "Toca a quién votas", style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                    Text(
+                      currentVotes[hostPlayerName] != null ? "✅ Votado: ${currentVotes[hostPlayerName]}" : "Toca a quién votas",
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -918,12 +1164,23 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                         padding: const EdgeInsets.only(right: 6.0),
                         child: ChoiceChip(
                           avatar: Text(p.avatar),
-                          label: Text(p.name, style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          label: Text(
+                            p.name,
+                            style: TextStyle(
+                              color: isSelected ? Colors.black : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                           selected: isSelected,
                           selectedColor: const Color(0xFF00CEC9),
                           backgroundColor: Colors.white10,
                           onSelected: (_) {
-                            _hostService.submitHostVote(p.name);
+                            setState(() {
+                              currentVotes[hostPlayerName] = p.name;
+                            });
+                            _hostService.submitHostVote(p.name, voterName: hostPlayerName);
+                            _checkAutoFinalizeVote();
                           },
                         ),
                       );
@@ -953,11 +1210,11 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
     return Column(
       children: [
-        if (allAnswered) ...[
+        if (isVoteFinalized) ...[
           Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: guiltyList.isNotEmpty
@@ -969,14 +1226,41 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             ),
             child: Row(
               children: [
-                Text(guiltyList.isNotEmpty ? "🍻" : "😇", style: const TextStyle(fontSize: 22)),
-                const SizedBox(width: 10),
+                Text(guiltyList.isNotEmpty ? "🍻" : "😇", style: const TextStyle(fontSize: 26)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     guiltyList.isNotEmpty
                         ? "¡${guiltyList.length} Culpable(s) beben!: ${guiltyList.join(', ')}"
                         : "¡Nadie lo ha hecho! El que propuso la pregunta bebe solo.",
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (_autoFinalizeTimer != null) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00CEC9).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF00CEC9)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Color(0xFF00CEC9))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "⏳ ¡Todos han respondido! Revelando automáticamente en $_autoFinalizeCountdown s...",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF00CEC9)),
                   ),
                 ),
               ],
@@ -987,13 +1271,17 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFFFF7675).withOpacity(0.2), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFFF7675))),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF7675).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFF7675)),
+                ),
                 child: Column(
                   children: [
                     const Text("¡YO SÍ! (CULPABLES)", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFF7675))),
                     const SizedBox(height: 6),
-                    Text("$yesCount", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFFFF7675))),
+                    Text("$yesCount", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFFFF7675))),
                   ],
                 ),
               ),
@@ -1001,22 +1289,43 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFF00B894).withOpacity(0.2), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF00B894))),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00B894).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF00B894)),
+                ),
                 child: Column(
                   children: [
                     const Text("YO NUNCA (INOCENTES)", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF00B894))),
                     const SizedBox(height: 6),
-                    Text("$noCount", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF00B894))),
+                    Text("$noCount", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF00B894))),
                   ],
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        const Text("Detalle de Respuestas:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text("Detalle de Respuestas:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              isVoteFinalized
+                  ? "Finalizado"
+                  : allAnswered
+                      ? "✅ ¡Todos listos!"
+                      : "Respondidos: $totalAnswers / $totalPlayers",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: allAnswered || isVoteFinalized ? const Color(0xFF00CEC9) : Colors.white54,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
         Expanded(
           child: ListView(
             children: currentBinary.entries.map((entry) {
@@ -1043,11 +1352,36 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             }).toList(),
           ),
         ),
+        if (!isVoteFinalized) ...[
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C5CE7),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.stop_circle_outlined, size: 20, color: Colors.white),
+              label: Text(
+                _autoFinalizeTimer != null
+                    ? "Revelar Ahora (o esperar $_autoFinalizeCountdown s) ⏹️"
+                    : "Finalizar y Revelar Culpables ⏹️",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+              ),
+              onPressed: _finalizeBinary,
+            ),
+          ),
+        ],
         if (hostParticipates) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFF1E2130), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF6C5CE7))),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2130),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF6C5CE7)),
+            ),
             child: Row(
               children: [
                 const Text("👑 Tu Respuesta:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFDCB6E))),
@@ -1066,7 +1400,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                     setState(() {
                       currentBinary[hostPlayerName] = true;
                     });
-                    _hostService.submitHostBinary("YES");
+                    _hostService.submitHostBinary("YES", voterName: hostPlayerName);
+                    _checkAutoFinalizeBinary();
                   },
                   child: Text(
                     currentBinary[hostPlayerName] == true ? "✅ ¡Yo Sí! 🙋" : "¡Yo Sí! 🙋",
@@ -1088,7 +1423,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                     setState(() {
                       currentBinary[hostPlayerName] = false;
                     });
-                    _hostService.submitHostBinary("NO");
+                    _hostService.submitHostBinary("NO", voterName: hostPlayerName);
+                    _checkAutoFinalizeBinary();
                   },
                   child: Text(
                     currentBinary[hostPlayerName] == false ? "✅ Yo Nunca 😇" : "Yo Nunca 😇",
@@ -1103,16 +1439,24 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     );
   }
 
-  // Vista Host de El Impostor
+  // Vista Host de El Impostor (El host NO sabe quién es el impostor hasta revelar)
   Widget _buildUndercoverHostView() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Icon(Icons.lock_rounded, size: 48, color: Color(0xFFFDCB6E)),
         const SizedBox(height: 12),
-        const Text("Palabras enviadas en secreto a cada móvil.", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        const Text(
+          "Palabras secretas repartidas a cada móvil.",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 8),
-        Text("Cada jugador debe decir una pista por turnos.", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+        Text(
+          "Cada jugador dice 1 pista por turnos. ¡Debatid y descubrid al sospechoso!",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13),
+        ),
         const SizedBox(height: 20),
         if (hostParticipates) ...[
           GestureDetector(
@@ -1154,31 +1498,123 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           ),
           const SizedBox(height: 20),
         ],
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text("Revelar Impostor al final: ", style: TextStyle(fontSize: 12, color: Colors.white54)),
-              Text(impostorPlayer ?? "Desconocido", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF7675))),
-            ],
+        if (!isImpostorRevealed) ...[
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD63031),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+            ),
+            icon: const Icon(Icons.visibility_rounded, color: Colors.white),
+            label: const Text(
+              "🔓 Revelar Quién Era el Impostor",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            onPressed: () {
+              setState(() {
+                isImpostorRevealed = true;
+              });
+            },
           ),
-        ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD63031).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFD63031), width: 2),
+            ),
+            child: Column(
+              children: [
+                const Text("🕵️ ¡EL IMPOSTOR ERA!", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFFFF7675), letterSpacing: 1.5)),
+                const SizedBox(height: 6),
+                Text(
+                  impostorPlayer ?? "Desconocido",
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Civil: $currentUndercoverCivilWord   •   Impostor: $currentUndercoverImpostorWord",
+                  style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
 
+  // Vista Host de Fake It (El camaleón) - Con cuenta atrás 3, 2, 1 automática y rol oculto al host
   Widget _buildFakeItHostView() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.theater_comedy_rounded, size: 54, color: Color(0xFFE84393)),
-        const SizedBox(height: 14),
-        const Text("¡Acción enviada a los móviles!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 8),
-        Text("Contad hasta 3 y actuad a la vez.", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
-        const SizedBox(height: 20),
+        const Icon(Icons.theater_comedy_rounded, size: 50, color: Color(0xFFE84393)),
+        const SizedBox(height: 12),
+        const Text(
+          "¡Acción repartida a cada móvil!",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "Pulsa el botón de cuenta atrás para sincronizar a todos los móviles.",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+
+        // Cuenta atrás 3, 2, 1 automática en pantalla
+        if (isFakeItCounting) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: fakeItCountdownVal == 0
+                    ? [const Color(0xFFE84393), const Color(0xFFFF7675)]
+                    : [const Color(0xFF6C5CE7), const Color(0xFF00CEC9)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12)],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  fakeItCountdownVal > 0 ? "$fakeItCountdownVal" : "💥 ¡¡ACTUAD YA!! 💥",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: fakeItCountdownVal > 0 ? 56 : 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                if (fakeItCountdownVal > 0)
+                  const Text("¡Preparad vuestros gestos!", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ] else ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE84393),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 6,
+              ),
+              icon: const Icon(Icons.timer_rounded, size: 24),
+              label: const Text("🚀 INICIAR CUENTA ATRÁS (3, 2, 1)", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              onPressed: _startFakeItCountdown,
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+
         if (hostParticipates) ...[
           GestureDetector(
             onTap: () {
@@ -1205,10 +1641,13 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   const SizedBox(height: 4),
                   Text(
                     isHostRoleRevealed
-                        ? (hostPlayerName == impostorPlayer ? "🕵️ ¡ERES EL IMPOSTOR! (Finge lo que hacen los demás)" : "🎭 $currentQuestion")
+                        ? (hostPlayerName == impostorPlayer
+                            ? "🕵️ ¡ERES EL CAMALEÓN! (Imita disimuladamente a los demás)"
+                            : "🎭 $currentFakeItAction")
                         : "Toca para ver / ocultar tu acción",
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w900,
                       color: isHostRoleRevealed ? const Color(0xFF00CEC9) : Colors.white60,
                     ),
@@ -1217,19 +1656,44 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
         ],
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text("El Camaleón es: ", style: TextStyle(fontSize: 12, color: Colors.white60)),
-              Text(impostorPlayer ?? "Desconocido", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF7675))),
-            ],
+
+        if (!isImpostorRevealed) ...[
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFFF7675),
+              side: const BorderSide(color: Color(0xFFFF7675)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: const Icon(Icons.visibility_rounded, size: 18),
+            label: const Text("🔓 Revelar Quién Era el Camaleón", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            onPressed: () {
+              setState(() {
+                isImpostorRevealed = true;
+              });
+            },
           ),
-        ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE84393).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE84393), width: 2),
+            ),
+            child: Column(
+              children: [
+                const Text("🎭 ¡EL CAMALEÓN ERA!", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFFFD79A8), letterSpacing: 1.5)),
+                const SizedBox(height: 6),
+                Text(impostorPlayer ?? "Desconocido", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Colors.white)),
+                const SizedBox(height: 6),
+                Text("Acción: $currentFakeItAction", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
