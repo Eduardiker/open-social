@@ -259,11 +259,14 @@ class MultiplayerHostService {
 
   // Enviar mensaje a un jugador específico
   void sendToPlayer(String playerId, Map<String, dynamic> message) {
-    final player = _players.firstWhere((p) => p.id == playerId, orElse: () => _players.first);
-    if (player.connection is WebSocket) {
-      final ws = player.connection as WebSocket;
-      if (ws.readyState == WebSocket.open) {
-        ws.add(jsonEncode(message));
+    final matches = _players.where((p) => p.id == playerId);
+    if (matches.isNotEmpty) {
+      final player = matches.first;
+      if (player.connection is WebSocket) {
+        final ws = player.connection as WebSocket;
+        if (ws.readyState == WebSocket.open) {
+          ws.add(jsonEncode(message));
+        }
       }
     }
   }
@@ -356,11 +359,14 @@ class MultiplayerHostService {
   }
 
   void sendPenaltyAlert(String playerName, String reason) {
-    final player = _players.firstWhere((p) => p.name == playerName, orElse: () => _players.first);
-    sendToPlayer(player.id, {
-      'type': 'penalty_alert',
-      'reason': reason,
-    });
+    final matches = _players.where((p) => p.name == playerName);
+    if (matches.isNotEmpty) {
+      final player = matches.first;
+      sendToPlayer(player.id, {
+        'type': 'penalty_alert',
+        'reason': reason,
+      });
+    }
   }
 
   void broadcastPartyWrapped(Map<String, dynamic> wrappedData) {

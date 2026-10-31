@@ -814,7 +814,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   Widget _buildLobbyView() {
     final qrApi = "https://quickchart.io/qr?size=220&text=${Uri.encodeComponent(connectionUrl)}";
 
-    return Column(
+    return ListView(
+      padding: EdgeInsets.zero,
       children: [
         // Tarjeta con QR y Enlace
         Container(
@@ -1019,61 +1020,58 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         ),
         const SizedBox(height: 10),
 
-        Expanded(
-          child: activeParticipants.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.phone_iphone_rounded, size: 48, color: Colors.white.withOpacity(0.2)),
-                      const SizedBox(height: 12),
-                      Text("¡Dile a tus amigos que escaneen el QR!", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: activeParticipants.length,
-                  itemBuilder: (ctx, idx) {
-                    final p = activeParticipants[idx];
-                    final isHost = p.id == 'host';
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E2130),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: isHost ? const Color(0xFFFDCB6E).withOpacity(0.6) : Colors.white10),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(p.avatar, style: const TextStyle(fontSize: 24)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                if (isHost) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFDCB6E).withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: const Color(0xFFFDCB6E), width: 1),
-                                    ),
-                                    child: const Text("ANFITRIÓN", style: TextStyle(color: Color(0xFFFDCB6E), fontSize: 10, fontWeight: FontWeight.bold)),
-                                  ),
-                                ],
-                              ],
+        if (activeParticipants.isEmpty) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                Icon(Icons.phone_iphone_rounded, size: 44, color: Colors.white.withOpacity(0.2)),
+                const SizedBox(height: 10),
+                Text("¡Dile a tus amigos que escaneen el QR!", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+              ],
+            ),
+          ),
+        ] else ...[
+          ...activeParticipants.map((p) {
+            final isHost = p.id == 'host';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E2130),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isHost ? const Color(0xFFFDCB6E).withOpacity(0.6) : Colors.white10),
+              ),
+              child: Row(
+                children: [
+                  Text(p.avatar, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        if (isHost) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFDCB6E).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFDCB6E), width: 1),
                             ),
+                            child: const Text("ANFITRIÓN", style: TextStyle(color: Color(0xFFFDCB6E), fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
-                          Icon(isHost ? Icons.verified_user_rounded : Icons.check_circle_rounded, color: isHost ? const Color(0xFFFDCB6E) : const Color(0xFF00CEC9), size: 18),
                         ],
-                      ),
-                    );
-                  },
-                ),
-        ),
+                      ],
+                    ),
+                  ),
+                  Icon(isHost ? Icons.verified_user_rounded : Icons.check_circle_rounded, color: isHost ? const Color(0xFFFDCB6E) : const Color(0xFF00CEC9), size: 18),
+                ],
+              ),
+            );
+          }),
+        ],
 
         // Botones de Juegos Multijugador
         Column(
