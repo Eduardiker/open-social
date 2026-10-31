@@ -343,10 +343,13 @@
   <div class="container">
     <header>
       <div class="brand">
-        <span>⚡</span> OPEN SOCIAL
+        <span>⚡</span> JALEO
       </div>
-      <div id="status-badge" class="badge-status status-disconnected">
-        <span id="status-dot">●</span> <span id="status-text">Sin conexión</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="sound-toggle-btn" onclick="toggleAudio()" title="Activar/Silenciar sonido" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 20px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer;">🔊</button>
+        <div id="status-badge" class="badge-status status-disconnected">
+          <span id="status-dot">●</span> <span id="status-text">Sin conexión</span>
+        </div>
       </div>
     </header>
 
@@ -570,6 +573,37 @@
         </div>
       </div>
     </div>
+
+    <!-- 9. PANTALLA: RESUMEN DE LA FIESTA (PARTY WRAPPED) -->
+    <div id="screen-wrapped" class="screen">
+      <div class="card" style="border: 2px solid var(--warning); text-align: center; background: rgba(253, 203, 110, 0.08);">
+        <div style="font-size: 3.5rem; margin-bottom: 6px;">🏆</div>
+        <div class="badge" style="background: rgba(253, 203, 110, 0.2); color: var(--warning); margin-bottom: 12px; font-weight: 800;">FIESTA FINALIZADA</div>
+        <h2 style="font-size: 1.6rem; font-weight: 900; margin-bottom: 4px;">Party Wrapped</h2>
+        <p id="wrapped-rounds" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+          Total de rondas jugadas: 0 🍻
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; text-align: left; margin-bottom: 20px;">
+          <div style="background: rgba(225, 112, 85, 0.15); border: 1px solid var(--danger); padding: 12px; border-radius: 14px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: var(--danger);">👑 PELIGRO PÚBLICO (MÁS VOTADO)</div>
+            <div id="wrapped-voted" style="font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 2px;">Nadie</div>
+          </div>
+          <div style="background: rgba(255, 118, 117, 0.15); border: 1px solid #ff7675; padding: 12px; border-radius: 14px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #ff7675;">🍻 EL MÁS PECADOR (YO NUNCA)</div>
+            <div id="wrapped-guilty" style="font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 2px;">Nadie</div>
+          </div>
+          <div style="background: rgba(214, 48, 49, 0.15); border: 1px solid #d63031; padding: 12px; border-radius: 14px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #d63031;">💣 IMÁN DE BOMBAS</div>
+            <div id="wrapped-bomb" style="font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 2px;">Nadie</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="setScreen('screen-waiting')" style="background: var(--warning); color: #000; font-weight: 900;">
+          Volver a Jugar 🎲
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -590,6 +624,96 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+
+    // ==========================================
+    // SISTEMA DE AUDIO PROCEDURAL (0 MB / OFFLINE)
+    // ==========================================
+    const SoundFX = {
+      ctx: null,
+      enabled: true,
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.ctx = new AudioContextClass();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+      beep(freq, duration, type = 'sine', gainVal = 0.2) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      },
+      click() {
+        this.beep(650, 0.05, 'triangle', 0.15);
+      },
+      tick() {
+        this.beep(880, 0.03, 'square', 0.1);
+      },
+      countdown(val) {
+        if (!this.enabled) return;
+        if (val === '¡ACTUAD!' || val === '¡YA!' || val === 0 || val === '0') {
+          this.beep(1320, 0.35, 'sawtooth', 0.25);
+        } else {
+          this.beep(800, 0.12, 'sine', 0.2);
+        }
+      },
+      boom() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const bufferSize = Math.floor(this.ctx.sampleRate * 0.7);
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(320, this.ctx.currentTime);
+          filter.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.7);
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.7);
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start();
+        } catch(e) {}
+      },
+      fanfare() {
+        if (!this.enabled) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((f, i) => setTimeout(() => this.beep(f, 0.25, 'triangle', 0.18), i * 90));
+      }
+    };
+
+    function toggleAudio() {
+      SoundFX.enabled = !SoundFX.enabled;
+      const btn = document.getElementById('sound-toggle-btn');
+      if (btn) btn.innerText = SoundFX.enabled ? '🔊' : '🔇';
+      if (SoundFX.enabled) SoundFX.click();
+    }
+
+    document.addEventListener('pointerdown', () => { SoundFX.init(); }, { once: true });
 
     // Inicialización al cargar la web
     window.addEventListener('DOMContentLoaded', () => {
@@ -782,6 +906,7 @@
 
       switch (msg.type) {
         case 'vote_results':
+          SoundFX.fanfare();
           document.getElementById('results-icon').innerText = '🏆';
           document.getElementById('results-badge').innerText = 'SENTENCIA DEL GRUPO';
           document.getElementById('results-title').innerText = msg.winner ? `¡${msg.winner} ha perdido!` : '¡Votación Finalizada!';
@@ -791,6 +916,7 @@
           break;
 
         case 'binary_results':
+          SoundFX.fanfare();
           document.getElementById('results-icon').innerText = '🍻';
           document.getElementById('results-badge').innerText = 'RESULTADO YO NUNCA';
           document.getElementById('results-title').innerText = '¡Confesiones Reveladas!';
@@ -805,6 +931,7 @@
           break;
 
         case 'fakeit_countdown':
+          SoundFX.countdown(msg.count);
           const overlay = document.getElementById('fakeit-countdown-overlay');
           if (overlay) {
             overlay.style.display = 'flex';
@@ -833,6 +960,7 @@
             btn.className = 'vote-btn';
             btn.innerHTML = `<span>${opt.avatar || '👤'} ${escapeHtml(opt.name)}</span> <span>➔</span>`;
             btn.onclick = () => {
+              SoundFX.click();
               document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
               btn.classList.add('selected');
               if (navigator.vibrate) navigator.vibrate(50);
@@ -865,6 +993,7 @@
 
         case 'penalty_alert':
           // Alerta de castigo directo al jugador
+          SoundFX.boom();
           document.getElementById('penalty-text').innerText = msg.reason || '¡Te toca cumplir castigo!';
           setScreen('screen-penalty');
           break;
@@ -888,6 +1017,7 @@
 
         case 'bomb_holding':
           if (msg.isHolding) {
+            SoundFX.tick();
             document.getElementById('potato-holding-view').style.display = 'block';
             document.getElementById('potato-waiting-view').style.display = 'none';
             document.getElementById('potato-category').innerText = "Categoría: " + (msg.category || 'Palabras rápidas');
@@ -901,6 +1031,7 @@
               b.style.borderColor = 'var(--danger)';
               b.innerHTML = `<span>💣 Pasar a <strong>${escapeHtml(otherName)}</strong></span> <span>➔</span>`;
               b.onclick = () => {
+                SoundFX.click();
                 if (navigator.vibrate) navigator.vibrate(80);
                 sendData({ type: 'pass_bomb', to: otherName });
                 document.getElementById('potato-holding-view').style.display = 'none';
@@ -917,6 +1048,16 @@
           setScreen('screen-hotpotato');
           break;
 
+        case 'session_wrapped':
+          SoundFX.fanfare();
+          const d = msg.data || {};
+          document.getElementById('wrapped-rounds').innerText = `Total de rondas jugadas: ${d.totalRounds || 0} 🍻`;
+          document.getElementById('wrapped-voted').innerText = d.mostVoted ? `${d.mostVoted} (${d.mostVotedCount || 0} votos)` : 'Nadie';
+          document.getElementById('wrapped-guilty').innerText = d.mostGuilty ? `${d.mostGuilty} (${d.mostGuiltyCount || 0} confesiones)` : 'Nadie';
+          document.getElementById('wrapped-bomb').innerText = d.bombMagnet ? `${d.bombMagnet} (${d.bombMagnetCount || 0} explosiones)` : 'Nadie';
+          setScreen('screen-wrapped');
+          break;
+
         case 'reset_to_lobby':
           setScreen('screen-waiting');
           break;
@@ -924,6 +1065,7 @@
     }
 
     function submitBinaryChoice(choice) {
+      SoundFX.click();
       if (navigator.vibrate) navigator.vibrate(50);
       sendData({ type: 'binary_submitted', value: choice });
       const nameEl = document.getElementById('wait-player-name');

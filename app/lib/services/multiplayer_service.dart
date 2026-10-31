@@ -363,6 +363,13 @@ class MultiplayerHostService {
     });
   }
 
+  void broadcastPartyWrapped(Map<String, dynamic> wrappedData) {
+    broadcast({
+      'type': 'session_wrapped',
+      'data': wrappedData,
+    });
+  }
+
   void resetToLobby() {
     broadcast({'type': 'reset_to_lobby'});
   }

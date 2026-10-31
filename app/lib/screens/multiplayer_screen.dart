@@ -39,6 +39,14 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   String currentUndercoverImpostorWord = '';
   String currentFakeItAction = '';
 
+  // Modo de Fiesta & Pantalla TV & Estadísticas de Sesión (Wrapped)
+  String partyMode = 'colegas'; // 'colegas', 'picante', 'tranqui'
+  bool isTvMode = false;
+  int totalRoundsPlayed = 0;
+  final Map<String, int> sessionVotesReceived = {}; // player -> total votes
+  final Map<String, int> sessionGuiltyCount = {}; // player -> total 'Yo Sí'
+  final Map<String, int> sessionBombExplosions = {}; // player -> total explosions
+
   // Estado del minijuego activo
   String activeGame = 'lobby'; // 'lobby', 'vote', 'undercover', 'binary', 'fakeit', 'hotpotato'
   String currentQuestion = '';
@@ -169,46 +177,74 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
   String get connectionUrl => "http://${_hostService.localIp}:${_hostService.port}";
 
-  final List<String> secretVoteQuestions = [
+  final List<String> secretVoteColegas = [
     "¿Quién tiene más probabilidades de acabar en comisaría un sábado?",
     "¿Quién tardaría menos en vender a sus amigos por 1 millón de euros?",
     "¿Quién sería el peor compañero de piso de todos?",
     "¿Quién tiene el historial de Google más turbio o vergonzoso?",
     "¿Quién es el más dramático o dramática de todo el grupo?",
-    "¿Quién volvería con su peor ex solo por no estar soltero/a?",
     "¿Quién sobreviviría menos tiempo en un apocalipsis zombi?",
     "¿Quién se emborracha más rápido y empieza a enviar audios peligrosos?",
     "¿Quién gastaría todo su sueldo en tonterías la primera semana del mes?",
     "¿Quién sería el peor cuidando de un bebé durante un fin de semana?",
-    "¿Quién oculta más secretos inconfesables en su galería de fotos?",
     "¿Quién se inventaría una boda para no ir a trabajar?",
-    "¿Quién sería arrestado por hacer algo absurdo en una fiesta?",
-    "¿Quién liga más por redes pero luego en persona se bloquea?",
-    "¿Quién es más probable que se case en Las Vegas con alguien que conoció ayer?",
-    "¿Quién tardaría más en darse cuenta de que le están tomando el pelo?",
     "¿Quién es más probable que termine viviendo debajo de un puente por gastón?",
     "¿Quién fingiría su propia muerte para escapar de una deuda o vergüenza?",
   ];
 
-  final List<String> yoNuncaPrompts = [
+  final List<String> secretVotePicante = [
+    "¿Quién oculta las fantasías íntimas más salvajes e inconfesables?",
+    "¿Quién volvería con su peor ex solo por una noche de pasión?",
+    "¿Quién tiene más fotos o vídeos comprometidos en su carpeta oculta?",
+    "¿Quién liga más por redes pero luego en persona se bloquea?",
+    "¿Quién es más probable que termine en un trío o relación abierta?",
+    "¿Quién es el mejor besador o besadora de todo este grupo?",
+    "¿Quién ha mandado un nude por error a la persona equivocada?",
+    "¿Quién es más probable que tenga un crush secreto con alguien de esta sala?",
+  ];
+
+  final List<String> secretVoteTranqui = [
+    "¿Quién es más probable que se quede dormido en el sofá en plena película?",
+    "¿Quién tardaría más en montar un mueble de IKEA sin perder la paciencia?",
+    "¿Quién gasta más dinero en pedir comida a domicilio por pereza?",
+    "¿Quién es el más adicto al móvil incluso en una comida familiar?",
+    "¿Quién tiene los stickers más raros y sin sentido de WhatsApp?",
+    "¿Quién pierde las llaves o el teléfono al menos una vez por semana?",
+  ];
+
+  final List<String> yoNuncaColegas = [
     "Yo nunca he fingido estar enfermo para librarme de un plan con amigos.",
     "Yo nunca he stalkeado el perfil de mi ex desde una cuenta secundaria falsa.",
     "Yo nunca he enviado una captura de pantalla a la misma persona de la que hablaba.",
-    "Yo nunca he besado a más de dos personas en la misma fiesta.",
     "Yo nunca he usado el cepillo de dientes de otra persona sin decírselo.",
-    "Yo nunca he mentido sobre mi edad para ligar o entrar a una discoteca.",
-    "Yo nunca he mirado el móvil de mi pareja o ligue a escondidas.",
-    "Yo nunca me he quedado dormido en el baño de un bar o discoteca.",
     "Yo nunca he borrado mensajes de WhatsApp para que nadie los descubriera.",
-    "Yo nunca he fingido un orgasmo para terminar antes.",
-    "Yo nunca he tenido un crush secreto con alguien de este grupo.",
-    "Yo nunca he salido a la calle sin ropa interior por pereza.",
     "Yo nunca he vomitado en una fiesta y he culpado disimuladamente a otro.",
-    "Yo nunca me he enamorado del crush o ex de un amigo/a.",
     "Yo nunca he robado un vaso, copa o cenicero de un bar.",
-    "Yo nunca he mandado una foto provocativa de la que luego me he arrepentido.",
-    "Yo nunca he dicho 'te quiero' solo por compromiso sin sentirlo.",
     "Yo nunca he fingido no ver a alguien por la calle para no saludarle.",
+    "Yo nunca me he comido la comida de la nevera de mi compañero de piso.",
+    "Yo nunca he salido de fiesta sin un euro esperando que me inviten.",
+  ];
+
+  final List<String> yoNuncaPicante = [
+    "Yo nunca he besado a más de dos personas en la misma fiesta.",
+    "Yo nunca he tenido un crush secreto con alguien de este grupo.",
+    "Yo nunca he fingido un orgasmo para terminar antes.",
+    "Yo nunca he mandado una foto provocativa de la que luego me he arrepentido.",
+    "Yo nunca he mirado el móvil de mi pareja o ligue a escondidas.",
+    "Yo nunca he hecho el amor en un lugar público o con riesgo de ser pillado.",
+    "Yo nunca he dicho 'te quiero' en la cama sin sentirlo solo por la situación.",
+    "Yo nunca me he liado con el ex o ligue de un amigo/a.",
+    "Yo nunca he tenido una noche loca y al despertar no recordaba el nombre de la persona.",
+  ];
+
+  final List<String> yoNuncaTranqui = [
+    "Yo nunca he llorado viendo una película de dibujos animados.",
+    "Yo nunca he cantado en el baño usando el champú como micrófono.",
+    "Yo nunca he mirado el saldo de mi cuenta y he cerrado la app del susto.",
+    "Yo nunca he comprado ropa por internet y jamás la he devuelto aunque no me quede.",
+    "Yo nunca he fingido saber de un tema en una conversación asintiendo sin parar.",
+    "Yo nunca me he tropezado en la calle y he disimulado empezando a correr.",
+    "Yo nunca he buscado mi propio nombre en Google por curiosidad.",
   ];
 
   final List<String> hotPotatoCategories = [
@@ -269,6 +305,12 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       votesCount[target] = (votesCount[target] ?? 0) + 1;
     }
 
+    // Registrar estadísticas de la sesión (Party Wrapped)
+    totalRoundsPlayed++;
+    votesCount.forEach((target, count) {
+      sessionVotesReceived[target] = (sessionVotesReceived[target] ?? 0) + count;
+    });
+
     String maxVoted = "Nadie";
     int maxCount = 0;
     votesCount.forEach((k, v) {
@@ -322,6 +364,12 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     int yesCount = currentBinary.values.where((v) => v).length;
     int noCount = currentBinary.values.where((v) => !v).length;
 
+    // Registrar estadísticas de la sesión (Party Wrapped)
+    totalRoundsPlayed++;
+    for (var g in guilty) {
+      sessionGuiltyCount[g] = (sessionGuiltyCount[g] ?? 0) + 1;
+    }
+
     _hostService.broadcastBinaryResults(
       guilty: guilty,
       yesCount: yesCount,
@@ -364,6 +412,28 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     });
   }
 
+  List<String> get activeSecretQuestions {
+    switch (partyMode) {
+      case 'picante':
+        return [...secretVotePicante, ...secretVoteColegas];
+      case 'tranqui':
+        return secretVoteTranqui;
+      default:
+        return secretVoteColegas;
+    }
+  }
+
+  List<String> get activeYoNuncaPrompts {
+    switch (partyMode) {
+      case 'picante':
+        return [...yoNuncaPicante, ...yoNuncaColegas];
+      case 'tranqui':
+        return yoNuncaTranqui;
+      default:
+        return yoNuncaColegas;
+    }
+  }
+
   // Iniciar Votación Secreta
   void _startSecretVote() {
     _autoFinalizeTimer?.cancel();
@@ -377,7 +447,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       return;
     }
 
-    final q = secretVoteQuestions[Random().nextInt(secretVoteQuestions.length)];
+    final q = activeSecretQuestions[Random().nextInt(activeSecretQuestions.length)];
     final options = players.map((p) => {'name': p.name, 'avatar': p.avatar}).toList();
     _hostService.startSecretVoting(q, options);
 
@@ -441,7 +511,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       return;
     }
 
-    final p = yoNuncaPrompts[Random().nextInt(yoNuncaPrompts.length)];
+    final p = activeYoNuncaPrompts[Random().nextInt(activeYoNuncaPrompts.length)];
     _hostService.startBinaryPrompt(p);
 
     setState(() {
@@ -508,6 +578,10 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         if (_bombSecondsLeft <= 0) {
           timer.cancel();
           _bombExploded = true;
+          totalRoundsPlayed++;
+          if (currentBombHolder != null) {
+            sessionBombExplosions[currentBombHolder!] = (sessionBombExplosions[currentBombHolder!] ?? 0) + 1;
+          }
           _hostService.sendPenaltyAlert(currentBombHolder!, "¡BOOM! Te ha explotado la bomba.");
         }
       });
@@ -540,12 +614,154 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 2)));
   }
 
+  void _showPartyWrappedDialog() {
+    String mostVoted = "Nadie aún";
+    int highestVotes = 0;
+    sessionVotesReceived.forEach((player, count) {
+      if (count > highestVotes) {
+        highestVotes = count;
+        mostVoted = player;
+      }
+    });
+
+    String mostGuilty = "Nadie aún";
+    int highestGuilty = 0;
+    sessionGuiltyCount.forEach((player, count) {
+      if (count > highestGuilty) {
+        highestGuilty = count;
+        mostGuilty = player;
+      }
+    });
+
+    String bombMagnet = "Nadie aún";
+    int highestBombs = 0;
+    sessionBombExplosions.forEach((player, count) {
+      if (count > highestBombs) {
+        highestBombs = count;
+        bombMagnet = player;
+      }
+    });
+
+    final wrappedData = {
+      'totalRounds': totalRoundsPlayed,
+      'mostVoted': mostVoted,
+      'mostVotedCount': highestVotes,
+      'mostGuilty': mostGuilty,
+      'mostGuiltyCount': highestGuilty,
+      'bombMagnet': bombMagnet,
+      'bombMagnetCount': highestBombs,
+    };
+
+    // Emitir a todos los mandos web conectados
+    _hostService.broadcastPartyWrapped(wrappedData);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2130),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Color(0xFFFDCB6E), width: 2)),
+        title: Row(
+          children: const [
+            Text("🏆", style: TextStyle(fontSize: 28)),
+            SizedBox(width: 10),
+            Text("Party Wrapped", style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFFDCB6E))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Total de rondas jugadas: $totalRoundsPlayed 🍻", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white70)),
+            const Divider(color: Colors.white24, height: 24),
+            _buildWrappedTile("👑 Peligro Público (Más Votado)", "$mostVoted ($highestVotes votos)", const Color(0xFFE17055)),
+            const SizedBox(height: 10),
+            _buildWrappedTile("🍻 El Más Pecador (Yo Sí)", "$mostGuilty ($highestGuilty confesiones)", const Color(0xFFFF7675)),
+            const SizedBox(height: 10),
+            _buildWrappedTile("💣 Imán de Bombas", "$bombMagnet ($highestBombs explosiones)", const Color(0xFFD63031)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: const Text("Cerrar", style: TextStyle(color: Colors.white70)),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFDCB6E), foregroundColor: Colors.black87),
+            icon: const Icon(Icons.share_rounded, size: 18),
+            label: const Text("¡Enviado a Todos!"),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Resumen de la fiesta emitido a los móviles de todos! 🎉")));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWrappedTile(String title, String val, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: color)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(height: 2),
+          Text(val, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeChip(String label, String mode, Color color) {
+    final isSelected = partyMode == mode;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => partyMode = mode),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.2) : Colors.white10,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
+                color: isSelected ? Colors.white : Colors.white60,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sala Multijugador (Host)', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(isTvMode ? '📺 JALEO TV (Host)' : 'Sala Multijugador (Host)', style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: Icon(isTvMode ? Icons.tv_rounded : Icons.tv_off_rounded, color: isTvMode ? const Color(0xFF00CEC9) : Colors.white70),
+            tooltip: isTvMode ? "Desactivar Modo TV" : "Activar Modo TV / Pantalla Grande",
+            onPressed: () => setState(() => isTvMode = !isTvMode),
+          ),
+          IconButton(
+            icon: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFDCB6E)),
+            tooltip: "Resumen de la Fiesta (Party Wrapped)",
+            onPressed: _showPartyWrappedDialog,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
@@ -724,6 +940,63 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         ),
         const SizedBox(height: 14),
 
+        // Selector de Tono / Modo de Fiesta
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E2130),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("🌶️ Tono de la Fiesta:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)),
+                  Text(
+                    partyMode == 'picante' ? "Picante (+18)" : partyMode == 'tranqui' ? "Tranqui / Chill" : "Colegas / Risas",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: partyMode == 'picante' ? const Color(0xFFFF7675) : partyMode == 'tranqui' ? const Color(0xFF00CEC9) : const Color(0xFFFDCB6E),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildModeChip("🍻 Colegas", "colegas", const Color(0xFFFDCB6E)),
+                  const SizedBox(width: 8),
+                  _buildModeChip("🌶️ +18 Picante", "picante", const Color(0xFFFF7675)),
+                  const SizedBox(width: 8),
+                  _buildModeChip("☕ Tranqui", "tranqui", const Color(0xFF00CEC9)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (totalRoundsPlayed > 0) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFFDCB6E),
+                side: const BorderSide(color: Color(0xFFFDCB6E)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.emoji_events_rounded, size: 18),
+              label: Text("🏆 Ver Resumen de la Fiesta ($totalRoundsPlayed rondas jugadas)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              onPressed: _showPartyWrappedDialog,
+            ),
+          ),
+        ],
+        const SizedBox(height: 14),
+
         // Jugadores Conectados
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -888,7 +1161,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(isTvMode ? 28 : 22),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF2D3250), Color(0xFF1E2130)],
@@ -896,27 +1169,61 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFF6C5CE7)),
+            border: Border.all(
+              color: isTvMode ? const Color(0xFF00CEC9) : const Color(0xFF6C5CE7),
+              width: isTvMode ? 2 : 1,
+            ),
+            boxShadow: isTvMode
+                ? [BoxShadow(color: const Color(0xFF00CEC9).withOpacity(0.3), blurRadius: 16)]
+                : null,
           ),
           child: Column(
             children: [
-              Text(
-                activeGame == 'undercover'
-                    ? "🕵️ EL IMPOSTOR EN JUEGO"
-                    : activeGame == 'fakeit'
-                        ? "🎭 FAKE IT • EL CAMALEÓN"
-                        : activeGame == 'hotpotato'
-                            ? "💣 LA PATATA CALIENTE EN VIVO"
-                            : activeGame == 'vote'
-                                ? "🗳️ VOTACIÓN SECRETA EN CURSO"
-                                : "🍻 RESPUESTAS EN VIVO",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF00CEC9), letterSpacing: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    activeGame == 'undercover'
+                        ? "🕵️ EL IMPOSTOR EN JUEGO"
+                        : activeGame == 'fakeit'
+                            ? "🎭 FAKE IT • EL CAMALEÓN"
+                            : activeGame == 'hotpotato'
+                                ? "💣 LA PATATA CALIENTE EN VIVO"
+                                : activeGame == 'vote'
+                                    ? "🗳️ VOTACIÓN SECRETA EN CURSO"
+                                    : "🍻 RESPUESTAS EN VIVO",
+                    style: TextStyle(
+                      fontSize: isTvMode ? 14 : 12,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF00CEC9),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  if (partyMode != 'colegas') ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: partyMode == 'picante' ? const Color(0xFFFF7675) : const Color(0xFF00CEC9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        partyMode == 'picante' ? "🌶️ +18" : "☕ TRANQUI",
+                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 14),
               Text(
                 currentQuestion,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, height: 1.4),
+                style: TextStyle(
+                  fontSize: isTvMode ? 25 : 20,
+                  fontWeight: FontWeight.bold,
+                  height: 1.35,
+                ),
               ),
             ],
           ),
