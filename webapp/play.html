@@ -734,8 +734,12 @@
 
       peer.on('error', (err) => {
         console.error("Error PeerJS:", err);
-        updateStatus(false, 'Error P2P');
-        alert("Error de conexión P2P: " + err.type);
+        updateStatus(false, 'Error conexión');
+        if (err.type === 'peer-unavailable') {
+          alert(`⚠️ No se encontró la sala "${room}".\n\nSi el anfitrión tiene la app abierta en el móvil en la misma red WiFi:\n1. Cambia a la pestaña "📶 Misma WiFi"\n2. Introduce la dirección IP que aparece en la pantalla del móvil (ej: 192.168.1.xx:8080).\n\nO mejor aún: ¡escanea el código QR directamente con la cámara del móvil!`);
+        } else {
+          alert("Error de conexión (" + err.type + "). Revisa tu conexión.");
+        }
       });
     }
 
