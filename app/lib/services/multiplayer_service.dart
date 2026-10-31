@@ -154,6 +154,7 @@ class MultiplayerHostService {
   // Procesar comunicación WebSocket con cada jugador
   void _handleWebSocket(WebSocket socket) {
     String? playerId;
+    String? playerName;
 
     socket.listen((event) {
       try {
@@ -162,6 +163,7 @@ class MultiplayerHostService {
 
         if (type == 'join') {
           final name = data['name'] ?? 'Jugador';
+          playerName = name;
           final avatar = data['avatar'] ?? '👤';
           playerId = "${name}_${DateTime.now().millisecondsSinceEpoch}";
 
@@ -184,14 +186,14 @@ class MultiplayerHostService {
           _eventsController.add({
             'type': 'vote_received',
             'voterId': playerId,
-            'voterName': name,
+            'voterName': playerName ?? 'Jugador',
             'target': data['target'],
           });
         } else if (type == 'binary_submitted') {
           _eventsController.add({
             'type': 'binary_received',
             'voterId': playerId,
-            'voterName': name,
+            'voterName': playerName ?? 'Jugador',
             'value': data['value'],
           });
         } else if (type == 'pass_bomb') {
