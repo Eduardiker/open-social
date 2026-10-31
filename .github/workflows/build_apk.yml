@@ -34,21 +34,24 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: 📦 Instalar dependencias
+      - name: 🛠️ Regenerar plataforma Android oficial limpia
         run: |
           cd app
+          rm -rf android
+          flutter create --platforms=android --org com.opensocial .
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' android/app/src/main/AndroidManifest.xml
           flutter pub get
 
       - name: 🚀 Compilar APK Release
         run: |
           cd app
-          flutter build apk --release
+          flutter build apk --release --no-tree-shake-icons
 
       - name: 📤 Subir APK como artefacto de descarga
         uses: actions/upload-artifact@v4
         with:
-          name: open-social-release-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          name: jaleo-party-apk
+          path: app/build/app/outputs/flutter-apk/*.apk
           retention-days: 30
 
       - name: 🏷️ Publicar en GitHub Releases (si es etiqueta v*)
