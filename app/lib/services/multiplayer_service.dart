@@ -75,7 +75,7 @@ class MultiplayerHostService {
     _eventsController.add({
       'type': 'binary_received',
       'voterId': 'host',
-      'value': value,
+      'value': value == 'YES',
     });
   }
 

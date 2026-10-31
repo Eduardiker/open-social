@@ -103,7 +103,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       } else if (type == 'binary_received') {
         final voter = connectedPlayers.firstWhere((p) => p.id == event['voterId'], orElse: () => connectedPlayers.first);
         setState(() {
-          currentBinary[voter.name] = event['value'];
+          currentBinary[voter.name] = (event['value'] == true || event['value'] == 'YES');
         });
       } else if (type == 'bomb_passed') {
         setState(() {
@@ -139,6 +139,67 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     }
   }
 
+  final List<String> secretVoteQuestions = [
+    "¿Quién tiene más probabilidades de acabar en comisaría un sábado?",
+    "¿Quién tardaría menos en vender a sus amigos por 1 millón de euros?",
+    "¿Quién sería el peor compañero de piso de todos?",
+    "¿Quién tiene el historial de Google más turbio o vergonzoso?",
+    "¿Quién es el más dramático o dramática de todo el grupo?",
+    "¿Quién volvería con su peor ex solo por no estar soltero/a?",
+    "¿Quién sobreviviría menos tiempo en un apocalipsis zombi?",
+    "¿Quién se emborracha más rápido y empieza a enviar audios peligrosos?",
+    "¿Quién gastaría todo su sueldo en tonterías la primera semana del mes?",
+    "¿Quién sería el peor cuidando de un bebé durante un fin de semana?",
+    "¿Quién oculta más secretos inconfesables en su galería de fotos?",
+    "¿Quién se inventaría una boda para no ir a trabajar?",
+    "¿Quién sería arrestado por hacer algo absurdo en una fiesta?",
+    "¿Quién liga más por redes pero luego en persona se bloquea?",
+    "¿Quién es más probable que se case en Las Vegas con alguien que conoció ayer?",
+    "¿Quién tardaría más en darse cuenta de que le están tomando el pelo?",
+    "¿Quién es más probable que termine viviendo debajo de un puente por gastón?",
+    "¿Quién fingiría su propia muerte para escapar de una deuda o vergüenza?",
+  ];
+
+  final List<String> yoNuncaPrompts = [
+    "Yo nunca he fingido estar enfermo para librarme de un plan con amigos.",
+    "Yo nunca he stalkeado el perfil de mi ex desde una cuenta secundaria falsa.",
+    "Yo nunca he enviado una captura de pantalla a la misma persona de la que hablaba.",
+    "Yo nunca he besado a más de dos personas en la misma fiesta.",
+    "Yo nunca he usado el cepillo de dientes de otra persona sin decírselo.",
+    "Yo nunca he mentido sobre mi edad para ligar o entrar a una discoteca.",
+    "Yo nunca he mirado el móvil de mi pareja o ligue a escondidas.",
+    "Yo nunca me he quedado dormido en el baño de un bar o discoteca.",
+    "Yo nunca he borrado mensajes de WhatsApp para que nadie los descubriera.",
+    "Yo nunca he fingido un orgasmo para terminar antes.",
+    "Yo nunca he tenido un crush secreto con alguien de este grupo.",
+    "Yo nunca he salido a la calle sin ropa interior por pereza.",
+    "Yo nunca he vomitado en una fiesta y he culpado disimuladamente a otro.",
+    "Yo nunca me he enamorado del crush o ex de un amigo/a.",
+    "Yo nunca he robado un vaso, copa o cenicero de un bar.",
+    "Yo nunca he mandado una foto provocativa de la que luego me he arrepentido.",
+    "Yo nunca he dicho 'te quiero' solo por compromiso sin sentirlo.",
+    "Yo nunca he fingido no ver a alguien por la calle para no saludarle.",
+  ];
+
+  final List<String> hotPotatoCategories = [
+    "Marcas de cerveza o alcohol",
+    "Razas de perro",
+    "Países que empiecen por M, C o B",
+    "Excusas típicas para llegar tarde",
+    "Películas de superhéroes o Marvel",
+    "Ingredientes de pizza",
+    "Cosas que encuentras en el baño",
+    "Marcas de coches o motos",
+    "Cantantes de reggaeton o música urbana",
+    "Deportes olímpicos",
+    "Series populares de Netflix o HBO",
+    "Comida rápida o hamburgueserías",
+    "Cosas que no deberías decir en una primera cita",
+    "Marcas de ropa o zapatillas",
+    "Capitales de Europa o del mundo",
+    "Animales salvajes peligrosos",
+  ];
+
   // Iniciar Votación Secreta
   void _startSecretVote() {
     if (connectedPlayers.length < 2) {
@@ -146,14 +207,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       return;
     }
 
-    final questions = [
-      "¿Quién tiene más probabilidades de acabar en comisaría un sábado?",
-      "¿Quién tardaría menos en vender a sus amigos por 1 millón de euros?",
-      "¿Quién sería el peor compañero de piso de todos?",
-      "¿Quién tiene el historial de Google más turbio o vergonzoso?",
-      "¿Quién es el más dramático de todo el grupo?",
-    ];
-    final q = questions[Random().nextInt(questions.length)];
+    final q = secretVoteQuestions[Random().nextInt(secretVoteQuestions.length)];
 
     currentVotes.clear();
     final options = connectedPlayers.map((p) => {'name': p.name, 'avatar': p.avatar}).toList();
@@ -199,14 +253,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
   // Iniciar Yo Nunca Colectivo
   void _startBinaryGame() {
-    final prompts = [
-      "Yo nunca he fingido estar enfermo para librarme de un plan.",
-      "Yo nunca he stalkeado el perfil de mi ex desde una cuenta secundaria.",
-      "Yo nunca he enviado un mensaje comprometido al grupo de WhatsApp equivocado.",
-      "Yo nunca he besado a más de dos personas en la misma fiesta.",
-      "Yo nunca he usado el cepillo de dientes de otra persona sin decírselo.",
-    ];
-    final p = prompts[Random().nextInt(prompts.length)];
+    final p = yoNuncaPrompts[Random().nextInt(yoNuncaPrompts.length)];
 
     currentBinary.clear();
     _hostService.startBinaryPrompt(p);
@@ -667,18 +714,64 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         ),
         const SizedBox(height: 14),
 
-        // Botones de Control de Ronda
+        // 1. Botón Principal de Siguiente Ronda Directa
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C5CE7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+            ),
+            icon: Icon(
+              activeGame == 'hotpotato' ? Icons.replay_rounded : Icons.arrow_forward_rounded,
+              size: 22,
+              color: Colors.white,
+            ),
+            label: Text(
+              activeGame == 'vote'
+                  ? "Siguiente Votación ➡️"
+                  : activeGame == 'binary'
+                      ? "Siguiente Yo Nunca ➡️"
+                      : activeGame == 'hotpotato'
+                          ? "Nueva Ronda de Bomba 💣"
+                          : activeGame == 'fakeit'
+                              ? "Siguiente Acción 🎭"
+                              : "Nueva Partida de Impostor 🕵️",
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            ),
+            onPressed: () {
+              if (activeGame == 'vote') {
+                _startSecretVote();
+              } else if (activeGame == 'binary') {
+                _startBinaryGame();
+              } else if (activeGame == 'hotpotato') {
+                _startHotPotatoLive();
+              } else if (activeGame == 'fakeit') {
+                _startFakeItLive();
+              } else if (activeGame == 'undercover') {
+                _startUndercover();
+              }
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // 2. Fila Secundaria: Cambiar de Juego y Ruleta de Castigos
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white12,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white70,
+                  side: const BorderSide(color: Colors.white24),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                label: const Text("Volver al Lobby", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.apps_rounded, size: 18),
+                label: const Text("Cambiar Juego", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 onPressed: _returnToLobby,
               ),
             ),
@@ -687,11 +780,12 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFDCB6E),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.casino_rounded, color: Colors.black87),
-                label: const Text("Girar Ruleta 🎰", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.casino_rounded, color: Colors.black87, size: 18),
+                label: const Text("Ruleta Castigo 🎲", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12)),
                 onPressed: () => widget.onPenalty(impostorPlayer),
               ),
             ),
@@ -709,15 +803,58 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     }
 
     final totalVotes = currentVotes.length;
-    final pending = connectedPlayers.length - totalVotes;
+    final totalPlayers = connectedPlayers.length;
+    final allVoted = totalPlayers > 0 && totalVotes >= totalPlayers;
+
+    String? maxVotedName;
+    int maxVotedCount = 0;
+    votesCount.forEach((name, count) {
+      if (count > maxVotedCount) {
+        maxVotedCount = count;
+        maxVotedName = name;
+      }
+    });
+
+    final pending = totalPlayers - totalVotes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (allVoted && maxVotedName != null) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF6C5CE7), Color(0xFFFD79A8)]),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 8)],
+            ),
+            child: Row(
+              children: [
+                const Text("🏆", style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "¡SENTENCIA! $maxVotedName ha sido el más votado ($maxVotedCount votos). ¡Paga castigo!",
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Votos recibidos: $totalVotes de ${connectedPlayers.length}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF00CEC9))),
+            Text(
+              allVoted ? "✅ ¡TODOS HAN VOTADO!" : "Votos recibidos: $totalVotes de $totalPlayers",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: allVoted ? const Color(0xFF00CEC9) : Colors.white70,
+              ),
+            ),
             if (pending > 0)
               Text("Faltan $pending...", style: const TextStyle(fontSize: 12, color: Colors.white54)),
           ],
@@ -809,8 +946,43 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       if (val) yesCount++; else noCount++;
     }
 
+    final totalAnswers = currentBinary.length;
+    final totalPlayers = connectedPlayers.length;
+    final allAnswered = totalPlayers > 0 && totalAnswers >= totalPlayers;
+    final guiltyList = currentBinary.entries.where((e) => e.value).map((e) => e.key).toList();
+
     return Column(
       children: [
+        if (allAnswered) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: guiltyList.isNotEmpty
+                    ? [const Color(0xFFFF7675), const Color(0xFFD63031)]
+                    : [const Color(0xFF00B894), const Color(0xFF00CEC9)],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 8)],
+            ),
+            child: Row(
+              children: [
+                Text(guiltyList.isNotEmpty ? "🍻" : "😇", style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    guiltyList.isNotEmpty
+                        ? "¡${guiltyList.length} Culpable(s) beben!: ${guiltyList.join(', ')}"
+                        : "¡Nadie lo ha hecho! El que propuso la pregunta bebe solo.",
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         Row(
           children: [
             Expanded(
@@ -881,15 +1053,47 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                 const Text("👑 Tu Respuesta:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFDCB6E))),
                 const Spacer(),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF7675), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
-                  onPressed: () => _hostService.submitHostBinary("YES"),
-                  child: const Text("¡Yo Sí! 🙋", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentBinary[hostPlayerName] == true
+                        ? const Color(0xFFFF7675)
+                        : Colors.white12,
+                    side: currentBinary[hostPlayerName] == true
+                        ? const BorderSide(color: Colors.white, width: 2)
+                        : BorderSide.none,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      currentBinary[hostPlayerName] = true;
+                    });
+                    _hostService.submitHostBinary("YES");
+                  },
+                  child: Text(
+                    currentBinary[hostPlayerName] == true ? "✅ ¡Yo Sí! 🙋" : "¡Yo Sí! 🙋",
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00B894), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
-                  onPressed: () => _hostService.submitHostBinary("NO"),
-                  child: const Text("Yo Nunca 😇", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentBinary[hostPlayerName] == false
+                        ? const Color(0xFF00B894)
+                        : Colors.white12,
+                    side: currentBinary[hostPlayerName] == false
+                        ? const BorderSide(color: Colors.white, width: 2)
+                        : BorderSide.none,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      currentBinary[hostPlayerName] = false;
+                    });
+                    _hostService.submitHostBinary("NO");
+                  },
+                  child: Text(
+                    currentBinary[hostPlayerName] == false ? "✅ Yo Nunca 😇" : "Yo Nunca 😇",
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12),
+                  ),
                 ),
               ],
             ),

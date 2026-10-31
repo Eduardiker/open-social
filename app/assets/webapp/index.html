@@ -868,6 +868,10 @@
     function submitBinaryChoice(choice) {
       if (navigator.vibrate) navigator.vibrate(50);
       sendData({ type: 'binary_submitted', value: choice });
+      const nameEl = document.getElementById('wait-player-name');
+      const badgeEl = document.getElementById('player-count-badge');
+      if (nameEl) nameEl.innerText = choice ? "¡Has confesado: SÍ! 🙋" : "¡Inocente: NUNCA! 😇";
+      if (badgeEl) badgeEl.innerText = "Respuesta enviada. Esperando los resultados en la pantalla del Host...";
       setScreen('screen-waiting');
     }
 
