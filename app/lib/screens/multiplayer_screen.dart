@@ -527,6 +527,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     _fakeItTimer?.cancel();
     _fakeItTimer = null;
     isFakeItCounting = false;
+    fakeItCountdownVal = 3;
 
     final players = activeParticipants;
     if (players.length < 3) {
@@ -600,6 +601,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     _fakeItTimer?.cancel();
     _fakeItTimer = null;
     isFakeItCounting = false;
+    fakeItCountdownVal = 3;
     isVoteFinalized = false;
     isImpostorRevealed = false;
     currentVotes.clear();
@@ -1997,24 +1999,24 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           const SizedBox(height: 20),
         ],
         if (!isImpostorRevealed) ...[
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD63031),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD63031).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFD63031).withOpacity(0.4)),
             ),
-            icon: const Icon(Icons.visibility_rounded, color: Colors.white),
-            label: const Text(
-              "🔓 Revelar Quién Era el Impostor",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.search_rounded, size: 18, color: Color(0xFFFF7675)),
+                SizedBox(width: 8),
+                Text(
+                  "Debate en curso: descubrid quién miente",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFFF7675)),
+                ),
+              ],
             ),
-            onPressed: () {
-              setState(() {
-                isImpostorRevealed = true;
-              });
-            },
           ),
         ] else ...[
           Container(
@@ -2095,19 +2097,24 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             ),
           ),
         ] else ...[
-          SizedBox(
+          Container(
             width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE84393),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 6,
-              ),
-              icon: const Icon(Icons.timer_rounded, size: 24),
-              label: const Text("🚀 INICIAR CUENTA ATRÁS (3, 2, 1)", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-              onPressed: _startFakeItCountdown,
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE84393).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE84393).withOpacity(0.4)),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.touch_app_rounded, color: Color(0xFFE84393), size: 30),
+                SizedBox(height: 6),
+                Text(
+                  "Pulsa 'Iniciar Cuenta Atrás' abajo para sincronizar",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                ),
+              ],
             ),
           ),
         ],
@@ -2172,20 +2179,20 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         ],
 
         if (!isImpostorRevealed) ...[
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF7675),
-              side: const BorderSide(color: Color(0xFFFF7675)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(14),
             ),
-            icon: const Icon(Icons.visibility_rounded, size: 18),
-            label: const Text("🔓 Revelar Quién Era el Camaleón", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            onPressed: () {
-              setState(() {
-                isImpostorRevealed = true;
-              });
-            },
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.psychology_rounded, size: 18, color: Color(0xFF00CEC9)),
+                SizedBox(width: 8),
+                Text("¿Quién está fingiendo? Descubridlo abajo", style: TextStyle(fontSize: 12, color: Colors.white70)),
+              ],
+            ),
           ),
         ] else ...[
           Container(
@@ -2262,11 +2269,22 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           const Text("¡BOOOOOM! EXPLOTÓ", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFFF7675))),
           const SizedBox(height: 8),
           Text("¡Le explotó a $currentBombHolder en la mano!", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFDCB6E)),
-            onPressed: () => widget.onPenalty(currentBombHolder),
-            child: const Text("Girar Ruleta para el Perdedor 🎰", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDCB6E).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFDCB6E)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.casino_rounded, size: 18, color: Color(0xFFFDCB6E)),
+                SizedBox(width: 8),
+                Text("Toca 'Girar Ruleta' abajo para el castigo", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFDCB6E))),
+              ],
+            ),
           ),
         ],
       ],
