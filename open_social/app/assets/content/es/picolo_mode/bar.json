@@ -1,0 +1,90 @@
+{
+  "id": "picolo_bar_es",
+  "game": "picolo_mode",
+  "name": "Sin Piedad & Cotilleos",
+  "language": "es",
+  "rating": "teen",
+  "cards": [
+    {
+      "type": "virus",
+      "title": "💀 VIRUS: EL SINCERICIDIO",
+      "text": "{p1} sólo puede responder con la verdad más cruda y sin filtro a cualquier pregunta durante {turns} rondas. ¡Si intenta suavizarla, bebe!",
+      "duration": 3,
+      "target": "p1"
+    },
+    {
+      "type": "virus",
+      "title": "💀 VIRUS: EL SUMISO",
+      "text": "{p1} debe obedecer cualquier orden ridícula de {p2} (como servir la bebida o rascarle la espalda) durante {turns} rondas.",
+      "duration": 3,
+      "target": "p1"
+    },
+    {
+      "type": "duel",
+      "title": "💀 DUELO: RULETA DE WHATSAPP",
+      "text": "{p1} y {p2} abren su WhatsApp. Quien tenga más mensajes sin leer en la bandeja bebe tantos tragos como decenas de no leídos tenga (máximo 4).",
+      "p1": true,
+      "p2": true
+    },
+    {
+      "type": "duel",
+      "title": "💀 DUELO: HISTORIAL DE BÚSQUEDA",
+      "text": "{p1} y {p2} muestran al grupo la última búsqueda de Google o YouTube en su móvil. El grupo vota cuál es más penosa. El perdedor bebe 3 tragos.",
+      "p1": true,
+      "p2": true
+    },
+    {
+      "type": "rule",
+      "title": "📜 REGLA DE MESA: CELULARES BOCA ARRIBA",
+      "text": "Todos los móviles se colocan en el centro de la mesa boca arriba. A la primera persona a quien le llegue una notificación, ¡se bebe su vaso!",
+      "duration": 5
+    },
+    {
+      "type": "rule",
+      "title": "📜 REGLA DE MESA: PROHIBIDO MIRAR AL VACÍO",
+      "text": "Nadie puede quedarse mirando al espacio pensando en sus cosas. Quien sea pillado desconectado, recibe 2 tragos asignados por {p1}.",
+      "duration": 4
+    },
+    {
+      "type": "vote",
+      "title": "🗳️ VOTACIÓN: EL MÁS INTERESADO",
+      "text": "A la de 3, señalen a la persona del grupo que más probabilidades tendría de casarse por dinero. El más votado bebe 3 tragos."
+    },
+    {
+      "type": "vote",
+      "title": "🗳️ VOTACIÓN: EL PEOR CONDUCIENDO",
+      "text": "A la de 3, señalen al que peor conduce o al que da más miedo acompañar de copiloto. ¡El elegido bebe 2 tragos para olvidar el susto!"
+    },
+    {
+      "type": "vote",
+      "title": "🗳️ VOTACIÓN: EL MÁS FALSO",
+      "text": "A la de 3, señalen al que pone mejor cara cuando saluda a alguien que en realidad no soporta. ¡El rey/reina de la diplomacia bebe!"
+    },
+    {
+      "type": "prompt",
+      "title": "💀 PREGUNTA BOMBA",
+      "text": "{p1}, confiesa en voz alta: ¿quién de las personas presentes tiene el peor gusto vistiendo o vistió peor hoy? Si te da miedo mojarte, bebe 4 tragos.",
+      "p1": true
+    },
+    {
+      "type": "prompt",
+      "title": "💀 MENSAJE AL AZAR",
+      "text": "{p1}, {p2} tiene derecho a elegir a un contacto de tu agenda y enviarle un mensaje de voz diciendo sólo 'Tenemos que hablar urgentemente'. Si te niegas, te bebes el vaso entero.",
+      "p1": true,
+      "p2": true
+    },
+    {
+      "type": "prompt",
+      "title": "💀 REVISIÓN DE GALERÍA",
+      "text": "{p1}, dale tu teléfono desbloqueado a {p2} para que mire durante 10 segundos tus fotos eliminadas recientemente o tu galería. Si no te atreves, 3 tragos.",
+      "p1": true,
+      "p2": true
+    },
+    {
+      "type": "prompt",
+      "title": "💀 LA EX PAREJA",
+      "text": "{p1}, di algo positivo y algo tóxico de tu última relación de pareja. Si prefieres no recordar a tu ex, bebe 3 tragos.",
+      "p1": true
+    }
+  ]
+}

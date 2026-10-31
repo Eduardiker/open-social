@@ -1,9 +1,65 @@
 {
   "name": "open_social_content",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "Repositorio oficial de contenidos y packs para Open Social",
   "languages": ["es", "en"],
   "games": [
+    {
+      "id": "picolo_mode",
+      "name": "Modo Picolo (Maldiciones)",
+      "icon": "auto_awesome",
+      "description": "Virus que duran turnos, duelos 1 vs 1, votaciones y reglas globales.",
+      "packs": [
+        {
+          "id": "picolo_classic_es",
+          "name": "Previa & Calentamiento",
+          "language": "es",
+          "rating": "teen",
+          "version": 2,
+          "file": "es/picolo_mode/classic.json"
+        },
+        {
+          "id": "picolo_party_es",
+          "name": "Fiesta & Desmadre",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/picolo_mode/party.json"
+        },
+        {
+          "id": "picolo_spicy_es",
+          "name": "Picante & Tensión (+18)",
+          "language": "es",
+          "rating": "18+",
+          "version": 1,
+          "file": "es/picolo_mode/spicy.json"
+        },
+        {
+          "id": "picolo_bar_es",
+          "name": "Sin Piedad & Celulares",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/picolo_mode/bar.json"
+        }
+      ]
+    },
+    {
+      "id": "hot_bomb",
+      "name": "La Bomba (Hot Bomb)",
+      "icon": "timer",
+      "description": "Di una palabra de la categoría y pasa el móvil antes de que explote.",
+      "packs": [
+        {
+          "id": "hot_bomb_categories_es",
+          "name": "Categorías Fránticas",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/hot_bomb/categories.json"
+        }
+      ]
+    },
     {
       "id": "most_likely_to",
       "name": "¿Quién es más probable?",
@@ -15,7 +71,7 @@
           "name": "Clásico Fiesta",
           "language": "es",
           "rating": "teen",
-          "version": 1,
+          "version": 2,
           "file": "es/most_likely_to/classic.json"
         }
       ]
@@ -28,19 +84,35 @@
       "packs": [
         {
           "id": "never_classic_es",
-          "name": "Clásico",
+          "name": "Clásico Relatable",
           "language": "es",
           "rating": "teen",
-          "version": 1,
+          "version": 2,
           "file": "es/never_have_i_ever/classic.json"
         },
         {
           "id": "never_party_es",
-          "name": "Fiesta & Locuras",
+          "name": "Fiesta & Desmadre",
           "language": "es",
           "rating": "18+",
-          "version": 1,
+          "version": 2,
           "file": "es/never_have_i_ever/party.json"
+        }
+      ]
+    },
+    {
+      "id": "would_you_rather",
+      "name": "¿Qué prefieres?",
+      "icon": "balance",
+      "description": "Dilemas imposibles y estadísticas de la comunidad.",
+      "packs": [
+        {
+          "id": "would_you_rather_classic_es",
+          "name": "Clásico Dilemas",
+          "language": "es",
+          "rating": "all-ages",
+          "version": 1,
+          "file": "es/would_you_rather/classic.json"
         }
       ]
     },
@@ -48,14 +120,14 @@
       "id": "truth_or_dare",
       "name": "Verdad o Reto",
       "icon": "flash_on",
-      "description": "Elige la verdad sincera o atrévete con el desafío.",
+      "description": "Confesiones sinceras y desafíos directos entre jugadores.",
       "packs": [
         {
           "id": "truth_dare_classic_es",
           "name": "Clásico Fiesta",
           "language": "es",
           "rating": "teen",
-          "version": 1,
+          "version": 2,
           "file": "es/truth_or_dare/classic.json"
         }
       ]
@@ -71,8 +143,24 @@
           "name": "Gestos y Acciones",
           "language": "es",
           "rating": "all-ages",
-          "version": 1,
+          "version": 2,
           "file": "es/fake_it/classic.json"
+        }
+      ]
+    },
+    {
+      "id": "couples",
+      "name": "Modo Parejas / Citas",
+      "icon": "favorite",
+      "description": "Preguntas de sincronización, complicidad y secretos para dos.",
+      "packs": [
+        {
+          "id": "couples_classic_es",
+          "name": "Conexión & Salseo",
+          "language": "es",
+          "rating": "teen",
+          "version": 1,
+          "file": "es/couples/classic.json"
         }
       ]
     },
@@ -87,7 +175,7 @@
           "name": "Preguntas Rápidas",
           "language": "es",
           "rating": "all-ages",
-          "version": 1,
+          "version": 2,
           "file": "es/wrong_answers_only/classic.json"
         }
       ]
@@ -103,16 +191,8 @@
           "name": "Cine y Series",
           "language": "es",
           "rating": "all-ages",
-          "version": 1,
+          "version": 2,
           "file": "es/charades/movies.json"
-        },
-        {
-          "id": "charades_celebrities_es",
-          "name": "Famosos y Personajes",
-          "language": "es",
-          "rating": "all-ages",
-          "version": 1,
-          "file": "es/charades/celebrities.json"
         }
       ]
     }

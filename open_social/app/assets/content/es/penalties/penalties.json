@@ -1,0 +1,21 @@
+{
+  "id": "penalties_classic_es",
+  "name": "Ruleta de Castigos",
+  "language": "es",
+  "penalties": [
+    "Bebe 2 sorbos de tu copa o vaso.",
+    "Deja que la persona a tu derecha envíe un emoji a quien quiera de tus chats de WhatsApp.",
+    "Habla con acento extranjero exagerado hasta que termine la siguiente ronda.",
+    "Muestra la última foto que tienes guardada en la papelera de fotos del móvil.",
+    "Haz 10 sentadillas o 5 flexiones en el suelo.",
+    "Canta el estribillo de una canción que elija el grupo como si estuvieras en Eurovisión.",
+    "Habla rapeando todo lo que digas durante los próximos 3 minutos.",
+    "Confiesa cuál ha sido la mayor mentira que has contado este año.",
+    "Deja que la persona frente a ti te despeine o te cambie el peinado.",
+    "Haz una imitación de un animal que el grupo elija durante 20 segundos.",
+    "Llama o envía un audio de 5 segundos a un amigo diciendo '¡Ha ocurrido algo grave!' y no contestes.",
+    "Tómate un trago de una mezcla que prepare el grupo con 3 líquidos distintos.",
+    "Deja tu móvil boca arriba en la mesa y cualquier notificación que llegue debe leerse en voz alta.",
+    "Paga las patatas o la siguiente ronda de comida en la próxima salida."
+  ]
+}
