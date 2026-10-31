@@ -166,13 +166,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     super.dispose();
   }
 
-  String get connectionUrl {
-    if (isP2P) {
-      return "https://eduardiker.github.io/open-social/play.html?room=$roomCode";
-    } else {
-      return "http://${_hostService.localIp}:${_hostService.port}";
-    }
-  }
+  String get connectionUrl => "http://${_hostService.localIp}:${_hostService.port}";
 
   final List<String> secretVoteQuestions = [
     "¿Quién tiene más probabilidades de acabar en comisaría un sábado?",
@@ -235,9 +229,16 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     "Animales salvajes peligrosos",
   ];
 
+  List<ConnectedPlayer> get activeParticipants {
+    return hostParticipates
+        ? connectedPlayers
+        : connectedPlayers.where((p) => p.id != 'host').toList();
+  }
+
   void _checkAutoFinalizeVote() {
     if (isVoteFinalized) return;
-    if (connectedPlayers.isNotEmpty && currentVotes.length >= connectedPlayers.length) {
+    final totalExpected = activeParticipants.length;
+    if (totalExpected > 0 && currentVotes.length >= totalExpected) {
       if (_autoFinalizeTimer == null) {
         _autoFinalizeCountdown = 5;
         _autoFinalizeTimer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -290,7 +291,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
   void _checkAutoFinalizeBinary() {
     if (isVoteFinalized) return;
-    if (connectedPlayers.isNotEmpty && currentBinary.length >= connectedPlayers.length) {
+    final totalExpected = activeParticipants.length;
+    if (totalExpected > 0 && currentBinary.length >= totalExpected) {
       if (_autoFinalizeTimer == null) {
         _autoFinalizeCountdown = 5;
         _autoFinalizeTimer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -368,13 +370,14 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     isVoteFinalized = false;
     currentVotes.clear();
 
-    if (connectedPlayers.length < 2) {
-      _showWarning("Se necesitan al menos 2 jugadores conectados.");
+    final players = activeParticipants;
+    if (players.length < 2) {
+      _showWarning("Votación Secreta requiere al menos 2 jugadores activos (actualmente: ${players.length}).");
       return;
     }
 
     final q = secretVoteQuestions[Random().nextInt(secretVoteQuestions.length)];
-    final options = connectedPlayers.map((p) => {'name': p.name, 'avatar': p.avatar}).toList();
+    final options = players.map((p) => {'name': p.name, 'avatar': p.avatar}).toList();
     _hostService.startSecretVoting(q, options);
 
     setState(() {
@@ -389,20 +392,21 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     _autoFinalizeTimer?.cancel();
     _autoFinalizeTimer = null;
 
-    if (connectedPlayers.length < 3) {
-      _showWarning("El Impostor requiere al menos 3 jugadores.");
+    final players = activeParticipants;
+    if (players.length < 3) {
+      _showWarning("El Impostor requiere al menos 3 jugadores activos (actualmente: ${players.length}).");
       return;
     }
 
     final pair = undercoverPairs[Random().nextInt(undercoverPairs.length)];
-    final impostorIndex = Random().nextInt(connectedPlayers.length);
-    impostorPlayer = connectedPlayers[impostorIndex].name;
+    final impostorIndex = Random().nextInt(players.length);
+    impostorPlayer = players[impostorIndex].name;
     currentUndercoverCivilWord = pair['civil']!;
     currentUndercoverImpostorWord = pair['impostor']!;
 
     final roles = <String, Map<String, String>>{};
-    for (int i = 0; i < connectedPlayers.length; i++) {
-      final p = connectedPlayers[i];
+    for (int i = 0; i < players.length; i++) {
+      final p = players[i];
       if (i == impostorIndex) {
         roles[p.name] = {'role': 'IMPOSTOR 🤫', 'word': pair['impostor']!};
       } else {
@@ -430,6 +434,12 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     isVoteFinalized = false;
     currentBinary.clear();
 
+    final players = activeParticipants;
+    if (players.isEmpty) {
+      _showWarning("Se necesita al menos 1 jugador para jugar a Yo Nunca.");
+      return;
+    }
+
     final p = yoNuncaPrompts[Random().nextInt(yoNuncaPrompts.length)];
     _hostService.startBinaryPrompt(p);
 
@@ -447,13 +457,14 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     _fakeItTimer = null;
     isFakeItCounting = false;
 
-    if (connectedPlayers.length < 3) {
-      _showWarning("Fake It requiere al menos 3 jugadores.");
+    final players = activeParticipants;
+    if (players.length < 3) {
+      _showWarning("Fake It requiere al menos 3 jugadores activos (actualmente: ${players.length}).");
       return;
     }
 
     final act = fakeItActions[Random().nextInt(fakeItActions.length)];
-    final imp = connectedPlayers[Random().nextInt(connectedPlayers.length)].name;
+    final imp = players[Random().nextInt(players.length)].name;
     impostorPlayer = imp;
     currentFakeItAction = act;
     isHostRoleRevealed = false;
@@ -471,14 +482,15 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   }
 
   void _startHotPotatoLive() {
-    if (connectedPlayers.length < 2) {
-      _showWarning("La Patata Caliente requiere al menos 2 jugadores.");
+    final players = activeParticipants;
+    if (players.length < 2) {
+      _showWarning("La Patata Caliente requiere al menos 2 jugadores activos (actualmente: ${players.length}).");
       return;
     }
 
     _bombTimer?.cancel();
     final cat = potatoCategories[Random().nextInt(potatoCategories.length)];
-    final initial = connectedPlayers[Random().nextInt(connectedPlayers.length)].name;
+    final initial = players[Random().nextInt(players.length)].name;
     currentBombHolder = initial;
     _bombSecondsLeft = 18 + Random().nextInt(14);
     _bombExploded = false;
@@ -486,6 +498,10 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     _hostService.updateHotPotato(cat, initial);
 
     _bombTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() {
         _bombSecondsLeft--;
         if (_bombSecondsLeft <= 0) {
@@ -504,6 +520,15 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
   void _returnToLobby() {
     _bombTimer?.cancel();
+    _autoFinalizeTimer?.cancel();
+    _autoFinalizeTimer = null;
+    _fakeItTimer?.cancel();
+    _fakeItTimer = null;
+    isFakeItCounting = false;
+    isVoteFinalized = false;
+    isImpostorRevealed = false;
+    currentVotes.clear();
+    currentBinary.clear();
     _hostService.resetToLobby();
     setState(() {
       activeGame = 'lobby';
@@ -511,7 +536,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
   }
 
   void _showWarning(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 2)));
   }
 
   @override
@@ -520,73 +545,39 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
       appBar: AppBar(
         title: const Text('Sala Multijugador (Host)', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
-        actions: [
-          IconButton(
-            tooltip: 'Cambiar modo (WiFi / Online)',
-            icon: Icon(isP2P ? Icons.public_rounded : Icons.wifi_rounded, color: const Color(0xFF00CEC9)),
-            onPressed: () {
-              setState(() {
-                isP2P = !isP2P;
-              });
-            },
-          )
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
         child: Column(
           children: [
-            // Cabecera con Selector de Modo
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => isP2P = false),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: !isP2P ? const Color(0xFF00CEC9).withOpacity(0.2) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: !isP2P ? const Color(0xFF00CEC9) : Colors.white12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+            if (activeGame == 'lobby') ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00CEC9).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF00CEC9).withOpacity(0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.wifi_rounded, color: Color(0xFF00CEC9), size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Icon(Icons.wifi_rounded, size: 16, color: Color(0xFF00CEC9)),
-                          SizedBox(width: 6),
-                          Text("Misma WiFi", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00CEC9))),
+                          Text("CONEXIÓN LOCAL DIRECTA", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF00CEC9), letterSpacing: 1.2)),
+                          SizedBox(height: 2),
+                          Text("Misma red WiFi o 'Zona WiFi / Compartir Internet' de este móvil. Sin lag y sin internet.", style: TextStyle(fontSize: 11, color: Colors.white70)),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => isP2P = true),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isP2P ? const Color(0xFF6C5CE7).withOpacity(0.2) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: isP2P ? const Color(0xFF6C5CE7) : Colors.white12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.public_rounded, size: 16, color: Color(0xFF6C5CE7)),
-                          SizedBox(width: 6),
-                          Text("Online (Código)", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF6C5CE7))),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 14),
+            ],
 
             // CONTENIDO SEGÚN ESTADO DE JUEGO
             Expanded(
@@ -618,12 +609,6 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
           ),
           child: Column(
             children: [
-              if (isP2P) ...[
-                const Text("CÓDIGO DE SALA ONLINE", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF6C5CE7), letterSpacing: 1.5)),
-                const SizedBox(height: 4),
-                Text(roomCode, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: 4, color: Color(0xFFFDCB6E))),
-                const SizedBox(height: 12),
-              ],
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
@@ -643,16 +628,33 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                "Apunta la cámara para entrar:",
-                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.6)),
+                "Escanea este QR con la cámara de tu móvil para entrar:",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.7)),
               ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10)),
-                child: Text(
-                  connectionUrl,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00CEC9)),
+              const SizedBox(height: 6),
+              InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: connectionUrl));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("📋 Dirección copiada al portapapeles"), duration: Duration(seconds: 1)),
+                  );
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.link_rounded, size: 16, color: Color(0xFF00CEC9)),
+                      const SizedBox(width: 6),
+                      Text(
+                        connectionUrl,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00CEC9)),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -662,22 +664,34 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
 
         // Tarjeta de Participación del Host
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: hostParticipates ? const Color(0xFF6C5CE7).withOpacity(0.18) : Colors.white10,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: hostParticipates ? const Color(0xFF6C5CE7) : Colors.white24),
+            color: hostParticipates ? const Color(0xFF6C5CE7).withOpacity(0.2) : Colors.white10,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hostParticipates ? const Color(0xFF6C5CE7) : Colors.white24,
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
-              Text(hostPlayerAvatar, style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 10),
+              Text(hostPlayerAvatar, style: const TextStyle(fontSize: 26)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Jugar también como Host ($hostPlayerName)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                    const Text("Vota, recibe la bomba y juega desde esta pantalla", style: TextStyle(fontSize: 10, color: Colors.white54)),
+                    Text(
+                      hostParticipates ? "👑 El Host participa activamente" : "📺 Host en Modo Presentador / TV",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hostParticipates
+                          ? "Votas, recibes la bomba y juegas en esta pantalla."
+                          : "Solo juegan tus amigos desde sus móviles; tú actúas de árbitro.",
+                      style: TextStyle(fontSize: 11, color: hostParticipates ? const Color(0xFF00CEC9) : Colors.white60),
+                    ),
                   ],
                 ),
               ),
@@ -692,6 +706,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                     } else {
                       _hostService.removeHostPlayer();
                     }
+                    connectedPlayers = List.from(_hostService.players);
                   });
                 },
               ),
@@ -708,17 +723,20 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
               children: [
                 const Icon(Icons.people_rounded, size: 18, color: Color(0xFF00CEC9)),
                 const SizedBox(width: 6),
-                Text("JUGADORES EN SALA (${connectedPlayers.length})", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF00CEC9), letterSpacing: 1.2)),
+                Text(
+                  "JUGADORES ACTIVOS (${activeParticipants.length})",
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF00CEC9), letterSpacing: 1.2),
+                ),
               ],
             ),
-            if (connectedPlayers.isEmpty)
+            if (activeParticipants.isEmpty)
               const Text("Esperando escaneo...", style: TextStyle(fontSize: 11, color: Colors.white38)),
           ],
         ),
         const SizedBox(height: 10),
 
         Expanded(
-          child: connectedPlayers.isEmpty
+          child: activeParticipants.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -730,25 +748,42 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   ),
                 )
               : ListView.builder(
-                  itemCount: connectedPlayers.length,
+                  itemCount: activeParticipants.length,
                   itemBuilder: (ctx, idx) {
-                    final p = connectedPlayers[idx];
+                    final p = activeParticipants[idx];
+                    final isHost = p.id == 'host';
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E2130),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white10),
+                        border: Border.all(color: isHost ? const Color(0xFFFDCB6E).withOpacity(0.6) : Colors.white10),
                       ),
                       child: Row(
                         children: [
                           Text(p.avatar, style: const TextStyle(fontSize: 24)),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            child: Row(
+                              children: [
+                                Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                if (isHost) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFDCB6E).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: const Color(0xFFFDCB6E), width: 1),
+                                    ),
+                                    child: const Text("ANFITRIÓN", style: TextStyle(color: Color(0xFFFDCB6E), fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                          const Icon(Icons.check_circle_rounded, color: Color(0xFF00CEC9), size: 18),
+                          Icon(isHost ? Icons.verified_user_rounded : Icons.check_circle_rounded, color: isHost ? const Color(0xFFFDCB6E) : const Color(0xFF00CEC9), size: 18),
                         ],
                       ),
                     );
@@ -769,7 +804,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: const Text("🕵️", style: TextStyle(fontSize: 16)),
-                    label: const Text("El Impostor", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                    label: const Text("El Impostor (Mín. 3)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
                     onPressed: _startUndercover,
                   ),
                 ),
@@ -782,7 +817,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: const Text("🎭", style: TextStyle(fontSize: 16)),
-                    label: const Text("Fake It Live", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                    label: const Text("Fake It Live (Mín. 3)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
                     onPressed: _startFakeItLive,
                   ),
                 ),
@@ -799,7 +834,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: const Text("🗳️", style: TextStyle(fontSize: 16)),
-                    label: const Text("Votación Secreta", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F111A))),
+                    label: const Text("Votación Secreta (Mín. 2)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F111A))),
                     onPressed: _startSecretVote,
                   ),
                 ),
@@ -812,7 +847,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: const Text("💣", style: TextStyle(fontSize: 16)),
-                    label: const Text("Patata Caliente", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                    label: const Text("Patata Caliente (Mín. 2)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
                     onPressed: _startHotPotatoLive,
                   ),
                 ),
@@ -901,52 +936,28 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         ),
         const SizedBox(height: 14),
 
-        // 1. Botón Principal de Siguiente Ronda Directa
+        // 1. Botón Principal Inteligente según Estado del Juego
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
+              backgroundColor: _getMainActionButtonColor(),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 4,
             ),
-            icon: Icon(
-              activeGame == 'hotpotato' ? Icons.replay_rounded : Icons.arrow_forward_rounded,
-              size: 22,
-              color: Colors.white,
-            ),
+            icon: Icon(_getMainActionButtonIcon(), size: 22, color: Colors.white),
             label: Text(
-              activeGame == 'vote'
-                  ? "Siguiente Votación ➡️"
-                  : activeGame == 'binary'
-                      ? "Siguiente Yo Nunca ➡️"
-                      : activeGame == 'hotpotato'
-                          ? "Nueva Ronda de Bomba 💣"
-                          : activeGame == 'fakeit'
-                              ? "Siguiente Acción 🎭"
-                              : "Nueva Partida de Impostor 🕵️",
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+              _getMainActionButtonText(),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
             ),
-            onPressed: () {
-              if (activeGame == 'vote') {
-                _startSecretVote();
-              } else if (activeGame == 'binary') {
-                _startBinaryGame();
-              } else if (activeGame == 'hotpotato') {
-                _startHotPotatoLive();
-              } else if (activeGame == 'fakeit') {
-                _startFakeItLive();
-              } else if (activeGame == 'undercover') {
-                _startUndercover();
-              }
-            },
+            onPressed: isFakeItCounting ? null : _handleMainActionButtonPressed,
           ),
         ),
         const SizedBox(height: 10),
 
-        // 2. Fila Secundaria: Cambiar de Juego y Ruleta de Castigos
+        // 2. Fila Secundaria: Volver al Lobby y Ruleta de Castigos
         Row(
           children: [
             Expanded(
@@ -957,8 +968,8 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.apps_rounded, size: 18),
-                label: const Text("Cambiar Juego", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                label: const Text("Volver al Lobby", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 onPressed: _returnToLobby,
               ),
             ),
@@ -972,14 +983,179 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(Icons.casino_rounded, color: Colors.black87, size: 18),
-                label: const Text("Ruleta Castigo 🎲", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12)),
-                onPressed: () => widget.onPenalty(impostorPlayer),
+                label: const Text("Girar Ruleta 🎰", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12)),
+                onPressed: () {
+                  String? targetLoser;
+                  if (activeGame == 'vote') {
+                    final votesCount = <String, int>{};
+                    for (var t in currentVotes.values) {
+                      votesCount[t] = (votesCount[t] ?? 0) + 1;
+                    }
+                    int maxC = 0;
+                    votesCount.forEach((k, v) {
+                      if (v > maxC) {
+                        maxC = v;
+                        targetLoser = k;
+                      }
+                    });
+                  } else if (activeGame == 'binary') {
+                    final guilty = currentBinary.entries.where((e) => e.value).map((e) => e.key).toList();
+                    if (guilty.isNotEmpty) {
+                      targetLoser = guilty[Random().nextInt(guilty.length)];
+                    }
+                  } else if (activeGame == 'undercover' || activeGame == 'fakeit') {
+                    targetLoser = impostorPlayer;
+                  } else if (activeGame == 'hotpotato') {
+                    targetLoser = currentBombHolder;
+                  }
+                  widget.onPenalty(targetLoser);
+                },
               ),
             ),
           ],
         ),
       ],
     );
+  }
+
+  String _getMainActionButtonText() {
+    switch (activeGame) {
+      case 'vote':
+        if (!isVoteFinalized) {
+          if (_autoFinalizeTimer != null) {
+            return "⚡ Ver Resultados Ya (o en $_autoFinalizeCountdown s)";
+          }
+          return "⏹️ Finalizar Votación y Revelar Ganador";
+        }
+        return "➡️ Siguiente Votación";
+      case 'binary':
+        if (!isVoteFinalized) {
+          if (_autoFinalizeTimer != null) {
+            return "⚡ Ver Culpables Ya (o en $_autoFinalizeCountdown s)";
+          }
+          return "⏹️ Finalizar Ronda y Ver Culpables";
+        }
+        return "➡️ Siguiente Yo Nunca";
+      case 'undercover':
+        if (!isImpostorRevealed) {
+          return "🔓 Revelar Quién Era el Impostor";
+        }
+        return "➡️ Nueva Partida de Impostor 🕵️";
+      case 'fakeit':
+        if (fakeItCountdownVal > 0 && !isFakeItCounting && !isImpostorRevealed) {
+          return "⏱️ Iniciar Cuenta Atrás (3, 2, 1...)";
+        } else if (isFakeItCounting) {
+          return "⏳ ¡Preparados! (${fakeItCountdownVal > 0 ? fakeItCountdownVal : '¡YA!'})";
+        } else if (!isImpostorRevealed) {
+          return "🔓 Revelar Quién Era el Camaleón";
+        }
+        return "➡️ Siguiente Acción 🎭";
+      case 'hotpotato':
+        if (!_bombExploded) {
+          return "💣 ¡Bomba en Juego! Pásala rápido";
+        }
+        return "➡️ Nueva Ronda de Bomba 💣";
+      default:
+        return "Continuar";
+    }
+  }
+
+  IconData _getMainActionButtonIcon() {
+    switch (activeGame) {
+      case 'vote':
+        return isVoteFinalized ? Icons.arrow_forward_rounded : Icons.stop_circle_rounded;
+      case 'binary':
+        return isVoteFinalized ? Icons.arrow_forward_rounded : Icons.stop_circle_rounded;
+      case 'undercover':
+        return isImpostorRevealed ? Icons.replay_rounded : Icons.visibility_rounded;
+      case 'fakeit':
+        if (fakeItCountdownVal > 0 && !isFakeItCounting && !isImpostorRevealed) {
+          return Icons.timer_rounded;
+        } else if (isFakeItCounting) {
+          return Icons.hourglass_bottom_rounded;
+        } else if (!isImpostorRevealed) {
+          return Icons.visibility_rounded;
+        }
+        return Icons.arrow_forward_rounded;
+      case 'hotpotato':
+        return _bombExploded ? Icons.replay_rounded : Icons.local_fire_department_rounded;
+      default:
+        return Icons.arrow_forward_rounded;
+    }
+  }
+
+  Color _getMainActionButtonColor() {
+    switch (activeGame) {
+      case 'vote':
+        if (!isVoteFinalized) {
+          return _autoFinalizeTimer != null ? const Color(0xFF00CEC9) : const Color(0xFFE17055);
+        }
+        return const Color(0xFF6C5CE7);
+      case 'binary':
+        if (!isVoteFinalized) {
+          return _autoFinalizeTimer != null ? const Color(0xFF00CEC9) : const Color(0xFFE17055);
+        }
+        return const Color(0xFFFF7675);
+      case 'undercover':
+        return isImpostorRevealed ? const Color(0xFF6C5CE7) : const Color(0xFFD63031);
+      case 'fakeit':
+        if (fakeItCountdownVal > 0 && !isFakeItCounting && !isImpostorRevealed) {
+          return const Color(0xFFE84393);
+        } else if (isFakeItCounting) {
+          return const Color(0xFFFDCB6E);
+        } else if (!isImpostorRevealed) {
+          return const Color(0xFFD63031);
+        }
+        return const Color(0xFFE84393);
+      case 'hotpotato':
+        return const Color(0xFFD63031);
+      default:
+        return const Color(0xFF6C5CE7);
+    }
+  }
+
+  void _handleMainActionButtonPressed() {
+    switch (activeGame) {
+      case 'vote':
+        if (!isVoteFinalized) {
+          _finalizeVote();
+        } else {
+          _startSecretVote();
+        }
+        break;
+      case 'binary':
+        if (!isVoteFinalized) {
+          _finalizeBinary();
+        } else {
+          _startBinaryGame();
+        }
+        break;
+      case 'undercover':
+        if (!isImpostorRevealed) {
+          setState(() {
+            isImpostorRevealed = true;
+          });
+        } else {
+          _startUndercover();
+        }
+        break;
+      case 'fakeit':
+        if (fakeItCountdownVal > 0 && !isFakeItCounting && !isImpostorRevealed) {
+          _startFakeItCountdown();
+        } else if (!isFakeItCounting && !isImpostorRevealed) {
+          setState(() {
+            isImpostorRevealed = true;
+          });
+        } else if (isImpostorRevealed) {
+          _startFakeItLive();
+        }
+        break;
+      case 'hotpotato':
+        if (_bombExploded) {
+          _startHotPotatoLive();
+        }
+        break;
+    }
   }
 
   // Resultados de Votación Secreta
@@ -990,8 +1166,12 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     }
 
     final totalVotes = currentVotes.length;
-    final totalPlayers = connectedPlayers.length;
+    final totalPlayers = activeParticipants.length;
     final allVoted = totalPlayers > 0 && totalVotes >= totalPlayers;
+    final pendingPlayers = activeParticipants
+        .where((p) => !currentVotes.containsKey(p.name))
+        .map((p) => p.name)
+        .toList();
 
     String? maxVotedName;
     int maxVotedCount = 0;
@@ -1001,8 +1181,6 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
         maxVotedName = name;
       }
     });
-
-    final pending = totalPlayers - totalVotes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1073,14 +1251,14 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                 color: isVoteFinalized || allVoted ? const Color(0xFF00CEC9) : Colors.white70,
               ),
             ),
-            if (!isVoteFinalized && pending > 0)
-              Text("Faltan $pending...", style: const TextStyle(fontSize: 12, color: Colors.white54)),
+            if (!isVoteFinalized && pendingPlayers.isNotEmpty)
+              Text("Faltan (${pendingPlayers.length}): ${pendingPlayers.join(', ')}", style: const TextStyle(fontSize: 11, color: Color(0xFFFDCB6E), fontWeight: FontWeight.bold)),
           ],
         ),
         const SizedBox(height: 10),
         Expanded(
           child: ListView(
-            children: connectedPlayers.map((p) {
+            children: activeParticipants.map((p) {
               final count = votesCount[p.name] ?? 0;
               final percent = totalVotes > 0 ? (count / totalVotes) : 0.0;
               return Padding(
@@ -1111,27 +1289,6 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             }).toList(),
           ),
         ),
-        if (!isVoteFinalized) ...[
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C5CE7),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.stop_circle_outlined, size: 20, color: Colors.white),
-              label: Text(
-                _autoFinalizeTimer != null
-                    ? "Revelar Resultados Ahora (o esperar $_autoFinalizeCountdown s) ⏹️"
-                    : "Finalizar Votación y Revelar Resultados ⏹️",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
-              ),
-              onPressed: _finalizeVote,
-            ),
-          ),
-        ],
         if (hostParticipates) ...[
           const SizedBox(height: 6),
           Container(
@@ -1158,7 +1315,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: connectedPlayers.map((p) {
+                    children: activeParticipants.map((p) {
                       final isSelected = currentVotes[hostPlayerName] == p.name;
                       return Padding(
                         padding: const EdgeInsets.only(right: 6.0),
@@ -1190,6 +1347,19 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
               ],
             ),
           ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.tv_rounded, size: 16, color: Color(0xFF00CEC9)),
+                SizedBox(width: 8),
+                Text("Modo Presentador: Esperando los votos de tus amigos en sus teléfonos", style: TextStyle(fontSize: 11, color: Colors.white70)),
+              ],
+            ),
+          ),
         ],
       ],
     );
@@ -1204,9 +1374,13 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
     }
 
     final totalAnswers = currentBinary.length;
-    final totalPlayers = connectedPlayers.length;
+    final totalPlayers = activeParticipants.length;
     final allAnswered = totalPlayers > 0 && totalAnswers >= totalPlayers;
     final guiltyList = currentBinary.entries.where((e) => e.value).map((e) => e.key).toList();
+    final pendingPlayers = activeParticipants
+        .where((p) => !currentBinary.containsKey(p.name))
+        .map((p) => p.name)
+        .toList();
 
     return Column(
       children: [
@@ -1316,11 +1490,13 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   ? "Finalizado"
                   : allAnswered
                       ? "✅ ¡Todos listos!"
-                      : "Respondidos: $totalAnswers / $totalPlayers",
+                      : pendingPlayers.isNotEmpty
+                          ? "Faltan: ${pendingPlayers.join(', ')}"
+                          : "Respondidos: $totalAnswers / $totalPlayers",
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: allAnswered || isVoteFinalized ? const Color(0xFF00CEC9) : Colors.white54,
+                color: allAnswered || isVoteFinalized ? const Color(0xFF00CEC9) : const Color(0xFFFDCB6E),
               ),
             ),
           ],
@@ -1352,27 +1528,6 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             }).toList(),
           ),
         ),
-        if (!isVoteFinalized) ...[
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C5CE7),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.stop_circle_outlined, size: 20, color: Colors.white),
-              label: Text(
-                _autoFinalizeTimer != null
-                    ? "Revelar Ahora (o esperar $_autoFinalizeCountdown s) ⏹️"
-                    : "Finalizar y Revelar Culpables ⏹️",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
-              ),
-              onPressed: _finalizeBinary,
-            ),
-          ),
-        ],
         if (hostParticipates) ...[
           const SizedBox(height: 6),
           Container(
@@ -1431,6 +1586,19 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12),
                   ),
                 ),
+              ],
+            ),
+          ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.tv_rounded, size: 16, color: Color(0xFF00CEC9)),
+                SizedBox(width: 8),
+                Text("Modo Presentador: Esperando las respuestas de tus amigos en sus teléfonos", style: TextStyle(fontSize: 11, color: Colors.white70)),
               ],
             ),
           ),
@@ -1494,6 +1662,20 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.tv_rounded, size: 16, color: Color(0xFF00CEC9)),
+                SizedBox(width: 8),
+                Text("Modo Presentador: Eres el moderador de la ronda", style: TextStyle(fontSize: 12, color: Colors.white70)),
+              ],
             ),
           ),
           const SizedBox(height: 20),
@@ -1657,6 +1839,20 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
             ),
           ),
           const SizedBox(height: 14),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.tv_rounded, size: 16, color: Color(0xFF00CEC9)),
+                SizedBox(width: 8),
+                Text("Modo Presentador: Pulsa el botón para dar la salida a todos", style: TextStyle(fontSize: 12, color: Colors.white70)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
         ],
 
         if (!isImpostorRevealed) ...[
@@ -1732,7 +1928,7 @@ class _MultiplayerHostScreenState extends State<MultiplayerHostScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: connectedPlayers.where((p) => p.name != hostPlayerName).map((p) {
+                    children: activeParticipants.where((p) => p.name != hostPlayerName).map((p) {
                       return ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF7675), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                         onPressed: () {

@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>JALEO - Mando de Jugador</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <!-- PeerJS para multijugador P2P Online con código de 4 letras -->
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- JALEO Web Controller -->
   <style>
     :root {
       --bg: #0F111A;
@@ -359,20 +358,28 @@
           Juega con tus amigos desde tu móvil sin instalar nada.
         </p>
 
-        <!-- Selector de Modo: WiFi Local vs Online WebRTC -->
-        <div class="mode-tabs">
-          <div class="mode-tab active" id="tab-mode-local" onclick="setMode('local')">📶 Misma WiFi</div>
-          <div class="mode-tab" id="tab-mode-p2p" onclick="setMode('p2p')">🌐 Online (Código)</div>
+        <!-- Aviso para visitantes desde GitHub Pages -->
+        <div id="github-notice" style="display: none; background: rgba(253, 203, 110, 0.12); border: 1px solid var(--warning); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-weight: 800; font-size: 0.95rem; color: var(--warning); margin-bottom: 6px;">
+            📸 ¿Estás jugando con amigos?
+          </div>
+          <p style="font-size: 0.8rem; color: #eee; line-height: 1.4; margin-bottom: 8px;">
+            Abre la cámara de tu móvil y <strong>escanea el código QR</strong> en la pantalla del Host para entrar directo.
+          </p>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">
+            O escribe la dirección IP que aparece en su pantalla (ej: <strong>192.168.1.34:8080</strong>):
+          </p>
         </div>
 
-        <div class="input-group" id="group-room" style="display: none;">
-          <label for="room-code">Código de Sala (4 letras)</label>
-          <input type="text" id="room-code" placeholder="Ej: FEST" maxlength="6" style="text-transform: uppercase;">
+        <!-- Indicador cuando ya está en el servidor local -->
+        <div id="local-badge" style="display: none; background: rgba(0, 206, 201, 0.12); border: 1px solid rgba(0, 206, 201, 0.3); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; align-items: center; gap: 8px;">
+          <span style="color: var(--accent); font-size: 1.1rem;">📶</span>
+          <span id="local-host-text" style="font-size: 0.85rem; font-weight: 700; color: #fff;">Conectando a la Sala Local</span>
         </div>
 
         <div class="input-group" id="group-host">
-          <label for="host-ip">Dirección del Host</label>
-          <input type="text" id="host-ip" placeholder="192.168.1.xxx:8080">
+          <label for="host-ip">Dirección IP del Host</label>
+          <input type="text" id="host-ip" placeholder="Ej: 192.168.1.34:8080">
         </div>
 
         <div class="input-group">
@@ -597,31 +604,38 @@
       });
     }
 
-    function setMode(mode) {
-      connectionMode = mode;
-      document.getElementById('tab-mode-local').classList.toggle('active', mode === 'local');
-      document.getElementById('tab-mode-p2p').classList.toggle('active', mode === 'p2p');
-      document.getElementById('group-host').style.display = mode === 'local' ? 'block' : 'none';
-      document.getElementById('group-room').style.display = mode === 'p2p' ? 'block' : 'none';
-    }
-
     function parseUrlParameters() {
       const params = new URLSearchParams(window.location.search);
-      // Si la URL viene con ?room=FEST activamos modo P2P directamente
-      if (params.get('room')) {
-        setMode('p2p');
-        document.getElementById('room-code').value = params.get('room').toUpperCase();
-      }
-      // Si viene con ?host=192.168.1.55:8080 o estamos cargados desde el servidor local
-      if (params.get('host')) {
-        setMode('local');
-        document.getElementById('host-ip').value = params.get('host');
-      } else if (window.location.host && !window.location.host.includes('github.io')) {
-        setMode('local');
+      const isGitHub = window.location.host && window.location.host.includes('github.io');
+      
+      const githubNotice = document.getElementById('github-notice');
+      const hostGroup = document.getElementById('group-host');
+      const localBadge = document.getElementById('local-badge');
+
+      if (isGitHub) {
+        if (githubNotice) githubNotice.style.display = 'block';
+        if (hostGroup) hostGroup.style.display = 'block';
+        if (localBadge) localBadge.style.display = 'none';
+      } else {
+        if (githubNotice) githubNotice.style.display = 'none';
+        if (hostGroup) hostGroup.style.display = 'none';
+        if (localBadge) {
+          localBadge.style.display = 'flex';
+          const hostTxt = document.getElementById('local-host-text');
+          if (hostTxt) hostTxt.innerText = `Conectado a Sala Local (${window.location.host})`;
+        }
         document.getElementById('host-ip').value = window.location.host;
+      }
+
+      if (params.get('host')) {
+        document.getElementById('host-ip').value = params.get('host');
       }
       if (params.get('name')) {
         document.getElementById('player-name').value = params.get('name');
+      }
+      if (params.get('avatar')) {
+        selectedAvatar = params.get('avatar');
+        renderAvatars();
       }
     }
 
@@ -647,7 +661,7 @@
     }
 
     // ==========================================
-    // CONEXIÓN AL HOST (LOCAL O P2P)
+    // CONEXIÓN AL HOST LOCAL
     // ==========================================
     function connectToHost() {
       const name = document.getElementById('player-name').value.trim();
@@ -660,18 +674,26 @@
       document.getElementById('wait-avatar').innerText = selectedAvatar;
       document.getElementById('wait-player-name').innerText = `${selectedAvatar} ${name}`;
 
-      if (connectionMode === 'local') {
-        connectLocalWebSocket(name);
-      } else {
-        connectWebRTCPeer(name);
+      const isGitHub = window.location.host && window.location.host.includes('github.io');
+      if (isGitHub) {
+        let host = document.getElementById('host-ip').value.trim();
+        if (!host) {
+          alert("Por favor introduce la dirección IP que muestra el Host (ej: 192.168.1.34:8080) o escanea el QR con la cámara de tu móvil.");
+          return;
+        }
+        const cleanHost = host.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+        window.location.href = `http://${cleanHost}/?name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(selectedAvatar)}`;
+        return;
       }
+
+      connectLocalWebSocket(name);
     }
 
-    // Modo 1: WebSocket Local (Misma WiFi / Hotspot)
     function connectLocalWebSocket(name) {
       let host = document.getElementById('host-ip').value.trim();
       if (!host) host = window.location.host || '192.168.1.1:8080';
-      const wsUrl = `ws://${host}/ws`;
+      const cleanHost = host.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+      const wsUrl = `ws://${cleanHost}/ws`;
 
       updateStatus(false, 'Conectando...');
 
@@ -704,72 +726,17 @@
         socket.onerror = (err) => {
           console.error("Error WebSocket:", err);
           updateStatus(false, 'Error conexión');
-          alert("No se pudo conectar al host local. Revisa que estés en la misma WiFi.");
+          alert("No se pudo conectar al host local. Revisa que estés en la misma WiFi o conectado a la 'Zona WiFi' del Host.");
         };
       } catch (err) {
         alert("Error de conexión: " + err.message);
       }
     }
 
-    // Modo 2: WebRTC P2P (PeerJS - Online por código de 4 letras)
-    function connectWebRTCPeer(name) {
-      const room = document.getElementById('room-code').value.trim().toUpperCase();
-      if (!room) {
-        alert("Introduce el código de sala de 4 letras.");
-        return;
-      }
-
-      updateStatus(false, 'Conectando P2P...');
-      const hostPeerId = `opensocial-room-${room}`;
-
-      // Crear cliente Peer sin ID fija
-      peer = new Peer();
-
-      peer.on('open', (id) => {
-        peerConn = peer.connect(hostPeerId, { reliable: true });
-
-        peerConn.on('open', () => {
-          updateStatus(true, `Sala: ${room}`);
-          sendData({
-            type: 'join',
-            name: name,
-            avatar: selectedAvatar
-          });
-          setScreen('screen-waiting');
-        });
-
-        peerConn.on('data', (data) => {
-          handleHostMessage(data);
-        });
-
-        peerConn.on('close', () => {
-          updateStatus(false, 'Sala cerrada');
-        });
-
-        peerConn.on('error', (err) => {
-          console.error("Error P2P Conn:", err);
-          updateStatus(false, 'Error sala');
-          alert("No se pudo conectar a la sala " + room + ". ¿Está el Host iniciado?");
-        });
-      });
-
-      peer.on('error', (err) => {
-        console.error("Error PeerJS:", err);
-        updateStatus(false, 'Error conexión');
-        if (err.type === 'peer-unavailable') {
-          alert(`⚠️ No se encontró la sala "${room}".\n\nSi el anfitrión tiene la app abierta en el móvil en la misma red WiFi:\n1. Cambia a la pestaña "📶 Misma WiFi"\n2. Introduce la dirección IP que aparece en la pantalla del móvil (ej: 192.168.1.xx:8080).\n\nO mejor aún: ¡escanea el código QR directamente con la cámara del móvil!`);
-        } else {
-          alert("Error de conexión (" + err.type + "). Revisa tu conexión.");
-        }
-      });
-    }
-
-    // Enviar datos al host (unificado para WS y P2P)
+    // Enviar datos al host
     function sendData(msg) {
-      if (connectionMode === 'local' && socket && socket.readyState === WebSocket.OPEN) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(msg));
-      } else if (connectionMode === 'p2p' && peerConn && peerConn.open) {
-        peerConn.send(msg);
       }
     }
 
