@@ -4,6 +4,18 @@
 
 ![JALEO App Icon](app/assets/icon/app_icon.jpg)
 
+## 🌐 [¡JUGAR AHORA ONLINE / MANDO WEB!](https://eduardiker.github.io/open-social/)
+**👉 Entra y juega al instante desde tu móvil: [https://eduardiker.github.io/open-social/](https://eduardiker.github.io/open-social/)**  
+*(Mando de juego directo para tus amigos: [https://eduardiker.github.io/open-social/play.html](https://eduardiker.github.io/open-social/play.html))*
+
+<br/>
+
+[![Web App](https://img.shields.io/badge/Web%20App-Jugar%20Ahora-6C5CE7?style=for-the-badge&logo=googlechrome&logoColor=white)](https://eduardiker.github.io/open-social/)
+[![Mando Web](https://img.shields.io/badge/Mando%20M%C3%B3vil-play.html-00CEC9?style=for-the-badge&logo=safari&logoColor=white)](https://eduardiker.github.io/open-social/play.html)
+[![Descargar APK](https://img.shields.io/badge/Descargar-APK%20Android-FDCB6E?style=for-the-badge&logo=android&logoColor=black)](https://github.com/Eduardiker/open-social/releases)
+
+<br/>
+
 **El Party Box y juego social para grupos definitivo de código abierto.**  
 *12 Party Games en 1 • Modo Multijugador Web por QR (sin instalar apps) • Maldiciones & Virus Party • 100% Offline y Privado*
 
