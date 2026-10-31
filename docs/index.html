@@ -329,6 +329,27 @@
       transform: scale(1.05);
     }
 
+        .filter-btn {
+      background: #141724;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      padding: 8px 18px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      background: #1F2438;
+      color: #fff;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+    }
     /* Game Modes Grid */
     .section-header {
       text-align: center;
@@ -586,37 +607,113 @@
     <!-- Minijuegos -->
     <section id="modos">
       <div class="section-header">
-        <h2>5 Modos de Fiesta en una Sola App</h2>
-        <p>Desde romper el hielo hasta el caos absoluto de risas, piques y tragos.</p>
+        <h2>Todos los Minijuegos de JALEO</h2>
+        <p>Más de 10 modos completos para cualquier tipo de fiesta, previa o reunión.</p>
+        
+        <!-- Filtros interactivos -->
+        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+          <button class="filter-btn active" onclick="filterModes('all', this)">🎉 Todos (12)</button>
+          <button class="filter-btn" onclick="filterModes('live', this)">🌐 Multijugador Web Live</button>
+          <button class="filter-btn" onclick="filterModes('party', this)">🍻 Fiesta & Previas</button>
+          <button class="filter-btn" onclick="filterModes('spicy', this)">🔥 Picante & Salseo</button>
+        </div>
       </div>
 
-      <div class="modes-grid">
-        <!-- 1. Maldiciones & Duelos -->
-        <div class="mode-card">
+      <div class="modes-grid" id="modesGrid">
+        <!-- 1. Maldiciones & Duelos (Virus) -->
+        <div class="mode-card" data-category="party">
           <div class="mode-icon">🧪</div>
+          <div class="tag-cat" style="color: #A29BFE; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">4 Packs Temáticos</div>
           <h3>Maldiciones & Duelos</h3>
-          <p>Reglas acumulativas estilo virus que duran varios turnos. Si te olvidas de tu maldición o caes en un duelo rápido, ¡pagas las consecuencias!</p>
+          <p>Reglas acumulativas estilo virus que duran varios turnos. Si rompes tu maldición o pierdes un duelo rápido, ¡pagas tragos de castigo!</p>
         </div>
 
         <!-- 2. Fake It Live -->
-        <div class="mode-card">
+        <div class="mode-card" data-category="live">
           <div class="mode-icon">🕵️‍♂️</div>
+          <div class="tag-cat" style="color: #00CEC9; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Multijugador Live</div>
           <h3>Fake It & Infiltrado Live</h3>
-          <p>Todos reciben una palabra secreta en su móvil excepto el impostor. Haz preguntas, responde con ingenio y votad al sospechoso en tiempo real.</p>
+          <p>Todos reciben una palabra secreta en su teléfono excepto el impostor. Haced preguntas cruzadas y votad en directo para desenmascararlo.</p>
         </div>
 
         <!-- 3. Patata Caliente Live -->
-        <div class="mode-card">
+        <div class="mode-card" data-category="live">
           <div class="mode-icon">💣</div>
+          <div class="tag-cat" style="color: #00CEC9; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Multijugador Live</div>
           <h3>La Patata Caliente Live</h3>
-          <p>El temporizador va corriendo y la bomba viaja por el aire de pantalla a pantalla. Di una palabra de la categoría y pásala antes de que explote en tu mano.</p>
+          <p>La bomba con cuenta atrás viaja en tiempo real de pantalla a pantalla. Di rápido una palabra de la categoría y pásala antes de que explote en tu mano.</p>
         </div>
 
-        <!-- 4. Votaciones & ¿Qué Prefieres? -->
-        <div class="mode-card">
+        <!-- 4. Votaciones en Vivo -->
+        <div class="mode-card" data-category="live">
           <div class="mode-icon">🗳️</div>
-          <h3>Votaciones en Vivo</h3>
-          <p>¿Quién es más probable que termine en urgencias hoy? Elige en secreto desde tu mando web y descubre qué piensa realmente tu grupo de amigos.</p>
+          <div class="tag-cat" style="color: #00CEC9; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Multijugador Live</div>
+          <h3>Votaciones Secretas Live</h3>
+          <p>Votad al unísono desde el mando web quién es más probable que haga locuras y revelad los porcentajes en pantalla con risas garantizadas.</p>
+        </div>
+
+        <!-- 5. Yo Nunca Nunca -->
+        <div class="mode-card" data-category="party spicy">
+          <div class="mode-icon">🙈</div>
+          <div class="tag-cat" style="color: #FD79A8; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Clásico & Fiesta</div>
+          <h3>Yo Nunca Nunca</h3>
+          <p>Cientos de confesiones desde lo inocente hasta lo salvaje. Si lo has hecho, bebes; si nadie bebe, ¡el que preguntó paga ronda!</p>
+        </div>
+
+        <!-- 6. Verdad o Reto -->
+        <div class="mode-card" data-category="spicy">
+          <div class="mode-icon">🔥</div>
+          <div class="tag-cat" style="color: #FF7675; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Picante & Retos</div>
+          <h3>Verdad o Reto</h3>
+          <p>Preguntas directas sin filtros y retos atrevidos para poner a prueba la valentía de tus amigos y subir la temperatura del ambiente.</p>
+        </div>
+
+        <!-- 7. ¿Qué Prefieres? -->
+        <div class="mode-card" data-category="party live">
+          <div class="mode-icon">⚖️</div>
+          <div class="tag-cat" style="color: #FDCB6E; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Dilemas Morales</div>
+          <h3>¿Qué Prefieres?</h3>
+          <p>Dos opciones extremas e incómodas. ¿Prefieres saber la fecha de tu muerte o la causa? Votad y defended vuestra postura.</p>
+        </div>
+
+        <!-- 8. ¿Quién es Más Probable? -->
+        <div class="mode-card" data-category="party">
+          <div class="mode-icon">👥</div>
+          <div class="tag-cat" style="color: #A29BFE; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Salseo Grupal</div>
+          <h3>¿Quién es Más Probable?</h3>
+          <p>A la de tres, todo el mundo señala con el dedo al culpable. El que reciba más votos tiene que pagar la penalización.</p>
+        </div>
+
+        <!-- 9. Solo Respuestas Incorrectas -->
+        <div class="mode-card" data-category="party">
+          <div class="mode-icon">❌</div>
+          <div class="tag-cat" style="color: #FDCB6E; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Rapidez Mental</div>
+          <h3>Solo Respuestas Incorrectas</h3>
+          <p>El juego donde decir la verdad te elimina. Te preguntan "¿De qué color es el cielo?" y tienes 2 segundos para inventarte un disparate.</p>
+        </div>
+
+        <!-- 10. Mímica & Charadas -->
+        <div class="mode-card" data-category="party">
+          <div class="mode-icon">🎭</div>
+          <div class="tag-cat" style="color: #00CEC9; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Películas & Acción</div>
+          <h3>Mímica & Charadas</h3>
+          <p>Ponte el móvil en la frente o actúa delante de todos sin pronunciar una sola palabra antes de que termine el temporizador.</p>
+        </div>
+
+        <!-- 11. Modo Parejas -->
+        <div class="mode-card" data-category="spicy">
+          <div class="mode-icon">💘</div>
+          <div class="tag-cat" style="color: #FD79A8; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Complicidad & Amor</div>
+          <h3>Modo Parejas</h3>
+          <p>Preguntas diseñadas para poner a prueba vuestra afinidad, revivir anécdotas o generar momentos de complicidad y tensión divertida.</p>
+        </div>
+
+        <!-- 12. Ruleta de Castigos -->
+        <div class="mode-card" data-category="party">
+          <div class="mode-icon">🎰</div>
+          <div class="tag-cat" style="color: #FF7675; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">Penalizaciones</div>
+          <h3>Ruleta de Castigos</h3>
+          <p>¿Perdiste un duelo o fallaste en la patata caliente? Gira la ruleta de penalizaciones sorpresa: llamadas broma, poses absurdas o tragos dobles.</p>
         </div>
       </div>
     </section>
@@ -702,6 +799,20 @@
 
     let currentCardIndex = 0;
 
+        function filterModes(category, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.mode-card');
+      cards.forEach(card => {
+        if (category === 'all') {
+          card.style.display = 'block';
+        } else {
+          const cats = card.getAttribute('data-category') || '';
+          card.style.display = cats.includes(category) ? 'block' : 'none';
+        }
+      });
+    }
     function nextDemoCard() {
       currentCardIndex = (currentCardIndex + 1) % sampleCards.length;
       const card = sampleCards[currentCardIndex];
